@@ -38,3 +38,6 @@ Jika Anda ingin menggunakan Docker di masa depan:
 4. Akses via: http://localhost:8080
 
 **Catatan:** Karena Anda sudah menggunakan Laragon, Docker tidak wajib digunakan kecuali untuk simulasi environment server production sesungguhnya.
+
+**Troubleshooting Docker:** Jika muncul error `The system cannot find the file specified` saat menjalankan Docker, pastikan aplikasi **Docker Desktop** sudah dibuka dan statusnya "Running" (ikon paus hijau di system tray).
+
