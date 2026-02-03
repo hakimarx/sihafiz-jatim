@@ -1,0 +1,10 @@
+.git
+.gitignore
+docker/
+node_modules/
+vendor/
+.env
+README.md
+INSTALL-LOCAL.md
+start-docker.bat
+*.sql
