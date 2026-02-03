@@ -1,0 +1,11 @@
+.env
+*.log
+/public/uploads/*
+!/public/uploads/.gitkeep
+!/public/uploads/foto-kegiatan/.gitkeep
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
