@@ -42,7 +42,7 @@
                                     <?= strlen($laporan['deskripsi']) > 50 ? '...' : '' ?>
                                 </td>
                                 <td>
-                                    <small class="text-muted"><?= htmlspecialchars($laporan['lokasi'] ?? '-') ?></small>
+                                    <small class="text-muted"><?= !empty($laporan['lokasi']) ? htmlspecialchars($laporan['lokasi']) : '-' ?></small>
                                 </td>
                                 <td class="text-center">
                                     <span class="badge badge-<?= $laporan['status_verifikasi'] ?>">

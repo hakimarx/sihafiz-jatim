@@ -105,10 +105,10 @@
 
             <!-- Data Hafalan -->
             <h6 class="text-muted mb-3 border-bottom pb-2"><i class="bi bi-book me-2"></i>Data Hafalan & Mengajar</h6>
-            <div class="row mb-4">
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Sertifikat Tahfidz (Juz)</label>
-                    <input type="text" class="form-control" name="sertifikat_tahfidz" placeholder="Contoh: 30 Juz"
+            <div class="row mb-3">
+                <div class="col-md-5 mb-3">
+                    <label class="form-label">Lembaga yang Mengeluarkan Sertifikat Tahfiz</label>
+                    <input type="text" class="form-control" name="sertifikat_tahfidz" placeholder="Contoh: PP. Al-Amin"
                         value="<?= htmlspecialchars($hafiz['sertifikat_tahfidz'] ?? '') ?>">
                 </div>
                 <div class="col-md-2 mb-3">
@@ -119,17 +119,73 @@
                         <label class="form-check-label" for="mengajar">Ya</label>
                     </div>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">TMT Mengajar</label>
-                    <input type="date" class="form-control" name="tmt_mengajar"
-                        value="<?= htmlspecialchars($hafiz['tmt_mengajar'] ?? '') ?>">
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">Tempat Mengajar</label>
-                    <input type="text" class="form-control" name="tempat_mengajar"
-                        value="<?= htmlspecialchars($hafiz['tempat_mengajar'] ?? '') ?>">
+                <div class="col-md-5 mb-3">
+                    <label class="form-label">Tempat Mengajar Utama</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control mb-2" name="tempat_mengajar" placeholder="Tempat"
+                            value="<?= htmlspecialchars($hafiz['tempat_mengajar'] ?? '') ?>">
+                        <input type="date" class="form-control mb-2" name="tmt_mengajar"
+                            value="<?= htmlspecialchars($hafiz['tmt_mengajar'] ?? '') ?>">
+                    </div>
                 </div>
             </div>
+
+            <!-- Tempat Mengajar Lainnya -->
+            <div id="mengajar-container" class="mb-4">
+                <label class="form-label d-flex justify-content-between">
+                    Tempat Mengajar Lainnya
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="add-mengajar">
+                        <i class="bi bi-plus-circle me-1"></i> Tambah Tempat
+                    </button>
+                </label>
+
+                <?php if (!empty($mengajarList)): ?>
+                    <?php foreach ($mengajarList as $i => $item): ?>
+                        <div class="row mengajar-row mb-2">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" name="mengajar_tempat[]" placeholder="Nama Tempat Mengajar" value="<?= htmlspecialchars($item['tempat_mengajar']) ?>">
+                            </div>
+                            <div class="col-md-4">
+                                <input type="date" class="form-control" name="mengajar_tmt[]" value="<?= htmlspecialchars($item['tmt_mengajar']) ?>">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-outline-danger w-100 remove-mengajar">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+
+            <script>
+                document.getElementById('add-mengajar').addEventListener('click', function() {
+                    const container = document.getElementById('mengajar-container');
+                    const row = document.createElement('div');
+                    row.className = 'row mengajar-row mb-2';
+                    row.innerHTML = `
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="mengajar_tempat[]" placeholder="Nama Tempat Mengajar">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="date" class="form-control" name="mengajar_tmt[]">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-outline-danger w-100 remove-mengajar">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                `;
+                    container.appendChild(row);
+                });
+
+                document.getElementById('mengajar-container').addEventListener('click', function(e) {
+                    if (e.target.classList.contains('remove-mengajar') || e.target.parentElement.classList.contains('remove-mengajar')) {
+                        const row = e.target.closest('.mengajar-row');
+                        row.remove();
+                    }
+                });
+            </script>
 
             <?php if ($isEdit): ?>
                 <!-- Data Bank (hanya saat edit) -->
@@ -138,7 +194,7 @@
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Nama Bank</label>
                         <input type="text" class="form-control" name="nama_bank"
-                            value="<?= htmlspecialchars($hafiz['nama_bank'] ?? '') ?>">
+                            value="<?= htmlspecialchars($hafiz['nama_bank'] ?? 'Bank Jatim') ?>">
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Nomor Rekening</label>

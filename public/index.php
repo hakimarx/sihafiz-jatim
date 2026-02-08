@@ -21,6 +21,7 @@ require_once __DIR__ . '/../config/security.php';
 // LOAD CORE CLASSES
 // ============================================
 require_once __DIR__ . '/../src/Core/Router.php';
+require_once __DIR__ . '/../src/Core/ImageProcessor.php';
 require_once __DIR__ . '/../src/Core/Controller.php';
 
 // ============================================
@@ -31,6 +32,7 @@ require_once __DIR__ . '/../src/Models/Hafiz.php';
 require_once __DIR__ . '/../src/Models/LaporanHarian.php';
 require_once __DIR__ . '/../src/Models/KabupatenKota.php';
 require_once __DIR__ . '/../src/Models/Seleksi.php';
+require_once __DIR__ . '/../src/Models/Setting.php';
 
 // ============================================
 // LOAD CORE UTILITIES
@@ -44,6 +46,13 @@ require_once __DIR__ . '/../src/Controllers/AuthController.php';
 require_once __DIR__ . '/../src/Controllers/AdminController.php';
 require_once __DIR__ . '/../src/Controllers/HafizController.php';
 require_once __DIR__ . '/../src/Controllers/SeleksiController.php';
+require_once __DIR__ . '/../src/Controllers/RegistrationController.php';
+require_once __DIR__ . '/../src/Controllers/ProfileController.php';
+
+// ============================================
+// INITIALIZE SESSION FROM COOKIE
+// ============================================
+checkRememberMe();
 
 // ============================================
 // INITIALIZE ROUTER
@@ -71,8 +80,18 @@ $router->get('/', function () {
 
 // Auth Routes
 $router->get('/login', [AuthController::class, 'loginForm']);
-$router->post('/login', [AuthController::class, 'login']);
+$router->post('/login', function () {
+    (new AuthController())->login();
+});
 $router->get('/logout', [AuthController::class, 'logout']);
+
+// Profile Routes (All Roles)
+$router->get('/profile', [ProfileController::class, 'index']);
+$router->post('/profile/update', [ProfileController::class, 'update']);
+
+// Registration Routes
+$router->get('/register', [RegistrationController::class, 'index']);
+$router->post('/register', [RegistrationController::class, 'store']);
 
 // Admin Routes
 $router->get('/admin/dashboard', [AdminController::class, 'dashboard']);
@@ -85,6 +104,19 @@ $router->post('/admin/hafiz/{id}/delete', [AdminController::class, 'hafizDelete'
 $router->get('/admin/laporan', [AdminController::class, 'laporanList']);
 $router->post('/admin/laporan/{id}/verify', [AdminController::class, 'laporanVerify']);
 
+// Admin Management (Users)
+$router->get('/admin/users', [AdminController::class, 'userList']);
+$router->get('/admin/users/create', [AdminController::class, 'userCreate']);
+$router->post('/admin/users', [AdminController::class, 'userStore']);
+$router->get('/admin/users/{id}/edit', [AdminController::class, 'userEdit']);
+$router->post('/admin/users/{id}/update', [AdminController::class, 'userUpdate']);
+$router->post('/admin/users/{id}/delete', [AdminController::class, 'userDelete']);
+
+// Admin Settings
+$router->get('/admin/settings', [AdminController::class, 'settings']);
+$router->post('/admin/settings', [AdminController::class, 'settingsUpdate']);
+$router->post('/admin/import', [AdminController::class, 'importProcess']);
+
 // Hafiz Routes
 $router->get('/hafiz/dashboard', [HafizController::class, 'dashboard']);
 $router->get('/hafiz/laporan', [HafizController::class, 'laporanList']);
@@ -94,6 +126,10 @@ $router->get('/hafiz/laporan/{id}/edit', [HafizController::class, 'laporanEdit']
 $router->post('/hafiz/laporan/{id}/update', [HafizController::class, 'laporanUpdate']);
 $router->post('/hafiz/laporan/{id}/delete', [HafizController::class, 'laporanDelete']);
 $router->get('/hafiz/profil', [HafizController::class, 'profil']);
+$router->get('/hafiz/profil/edit', [HafizController::class, 'profilEdit']);
+$router->post('/hafiz/profil/update', [HafizController::class, 'profilUpdate']);
+$router->get('/hafiz/password', [HafizController::class, 'passwordEdit']);
+$router->post('/hafiz/password/update', [HafizController::class, 'passwordUpdate']);
 
 // Seleksi Routes
 $router->get('/seleksi', [SeleksiController::class, 'index']);

@@ -19,8 +19,11 @@ class AuthController extends Controller
             return;
         }
 
+        $captcha = generateCaptcha();
+
         $this->view('auth.login', [
-            'title' => 'Login - ' . APP_NAME
+            'title' => 'Login - ' . APP_NAME,
+            'captcha' => $captcha
         ]);
     }
 
@@ -43,6 +46,14 @@ class AuthController extends Controller
 
         $username = $this->input('username');
         $password = $this->input('password');
+        $captchaInput = $this->input('captcha');
+
+        // Validate Captcha
+        if (!validateCaptcha($captchaInput)) {
+            setFlash('error', 'Jawaban captcha salah. Silakan coba lagi.');
+            $this->redirect(APP_URL . '/login');
+            return;
+        }
 
         // Validate input
         if (empty($username) || empty($password)) {
@@ -60,10 +71,17 @@ class AuthController extends Controller
                 $hafiz = Hafiz::findByUserId($user['id']);
                 if ($hafiz) {
                     $user['nama'] = $hafiz['nama'];
+                    $user['foto_profil'] = $hafiz['foto_profil'];
                 }
             }
 
             setUserSession($user);
+
+            // Handle Remember Me
+            if ($this->input('remember')) {
+                setRememberMe($user['id']);
+            }
+
             setFlash('success', 'Selamat datang, ' . ($user['nama'] ?? $user['username']) . '!');
             $this->redirectToDashboard();
         } else {
@@ -97,7 +115,7 @@ class AuthController extends Controller
                 $this->redirect(APP_URL . '/admin/dashboard');
                 break;
             case ROLE_PENGUJI:
-                $this->redirect(APP_URL . '/penguji/dashboard');
+                $this->redirect(APP_URL . '/seleksi');
                 break;
             case ROLE_HAFIZ:
                 $this->redirect(APP_URL . '/hafiz/dashboard');

@@ -131,15 +131,70 @@ function sanitizePhone(string $phone): string
  */
 function setUserSession(array $user): void
 {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['username'] = $user['username'];
     $_SESSION['role'] = $user['role'];
     $_SESSION['nama'] = $user['nama'] ?? $user['username'];
+    $_SESSION['foto_profil'] = $user['foto_profil'] ?? null;
     $_SESSION['logged_in'] = true;
     $_SESSION['login_time'] = time();
 
     // Regenerate session ID untuk prevent session fixation
     session_regenerate_id(true);
+}
+
+/**
+ * Persist login with Remember Me (Cookie)
+ */
+function setRememberMe(int $userId): void
+{
+    $token = bin2hex(random_bytes(32));
+    $expiry = time() + (30 * 24 * 60 * 60); // 30 days
+
+    // Store in database
+    Database::execute(
+        "UPDATE users SET remember_token = :token WHERE id = :id",
+        ['token' => $token, 'id' => $userId]
+    );
+
+    // Set cookie (secure, httponly)
+    setcookie('remember_me', $userId . ':' . $token, [
+        'expires' => $expiry,
+        'path' => '/',
+        'domain' => '',
+        'secure' => false, // Set true if using HTTPS
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+}
+
+/**
+ * Check and restore session from Remember Me cookie
+ */
+function checkRememberMe(): void
+{
+    if (isLoggedIn() || empty($_COOKIE['remember_me'])) {
+        return;
+    }
+
+    $parts = explode(':', $_COOKIE['remember_me']);
+    if (count($parts) !== 2) {
+        return;
+    }
+
+    [$userId, $token] = $parts;
+
+    $user = Database::queryOne(
+        "SELECT * FROM users WHERE id = :id AND remember_token = :token AND is_active = 1",
+        ['id' => $userId, 'token' => $token]
+    );
+
+    if ($user) {
+        setUserSession($user);
+    }
 }
 
 /**
@@ -258,4 +313,60 @@ function getFlash(): ?array
         return $flash;
     }
     return null;
+}
+// ============================================
+// CAPTCHA
+// ============================================
+
+/**
+ * Generate simple math captcha
+ */
+function generateCaptcha(): array
+{
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    $a = rand(1, 10);
+    $b = rand(1, 10);
+    $operators = ['+', '-'];
+    $op = $operators[rand(0, 1)];
+
+    if ($op === '-') {
+        if ($a < $b) { // Ensure positive result
+            $temp = $a;
+            $a = $b;
+            $b = $temp;
+        }
+        $answer = $a - $b;
+    } else {
+        $answer = $a + $b;
+    }
+
+    $_SESSION['captcha_answer'] = $answer;
+    return [
+        'question' => "$a $op $b",
+        'answer' => $answer
+    ];
+}
+
+/**
+ * Validate captcha
+ */
+function validateCaptcha(?string $userAnswer): bool
+{
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    if ($userAnswer === null || !isset($_SESSION['captcha_answer'])) {
+        return false;
+    }
+
+    $isValid = (int)$userAnswer === (int)$_SESSION['captcha_answer'];
+
+    // Clear captcha answer after validation to prevent replay
+    unset($_SESSION['captcha_answer']);
+
+    return $isValid;
 }

@@ -104,6 +104,132 @@ class User
     }
 
     /**
+     * Get all users with pagination and optional filters
+     */
+    public static function getAll(array $filters = [], int $page = 1, int $limit = 10): array
+    {
+        $offset = ($page - 1) * $limit;
+        $sql = "SELECT u.*, k.nama as kabupaten_kota_nama 
+                FROM users u 
+                LEFT JOIN kabupaten_kota k ON u.kabupaten_kota_id = k.id 
+                WHERE 1=1";
+        $params = [];
+
+        if (!empty($filters['role'])) {
+            $sql .= " AND u.role = :role";
+            $params['role'] = $filters['role'];
+        }
+
+        if (!empty($filters['search'])) {
+            $sql .= " AND (u.nama LIKE :search OR u.username LIKE :search)";
+            $params['search'] = "%{$filters['search']}%";
+        }
+
+        if (!empty($filters['kabupaten_kota_id'])) {
+            $sql .= " AND u.kabupaten_kota_id = :kabko_id";
+            $params['kabko_id'] = $filters['kabupaten_kota_id'];
+        }
+
+        // Count total
+        $countSql = str_replace("u.*, k.nama as kabupaten_kota_nama", "COUNT(*) as count", $sql);
+        $total = Database::queryOne($countSql, $params)['count'];
+
+        $sql .= " ORDER BY u.id DESC LIMIT $limit OFFSET $offset";
+        $data = Database::query($sql, $params);
+
+        return [
+            'data' => $data,
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit,
+            'total_pages' => ceil($total / $limit)
+        ];
+    }
+
+    /**
+     * Update user
+     */
+    public static function update(int $id, array $data): bool
+    {
+        $fields = [];
+        $params = ['id' => $id];
+
+        if (isset($data['username'])) {
+            $fields[] = "username = :username";
+            $params['username'] = $data['username'];
+        }
+
+        if (!empty($data['password'])) {
+            $fields[] = "password = :password";
+            $params['password'] = hashPassword($data['password']);
+        }
+
+        if (isset($data['role'])) {
+            $fields[] = "role = :role";
+            $params['role'] = $data['role'];
+        }
+
+        if (array_key_exists('kabupaten_kota_id', $data)) {
+            $fields[] = "kabupaten_kota_id = :kabko_id";
+            $params['kabko_id'] = $data['kabupaten_kota_id'];
+        }
+
+        if (isset($data['nama'])) {
+            $fields[] = "nama = :nama";
+            $params['nama'] = $data['nama'];
+        }
+
+        if (isset($data['email'])) {
+            $fields[] = "email = :email";
+            $params['email'] = $data['email'];
+        }
+
+        if (isset($data['telepon'])) {
+            $fields[] = "telepon = :telepon";
+            $params['telepon'] = $data['telepon'];
+        }
+
+        if (isset($data['is_active'])) {
+            $fields[] = "is_active = :is_active";
+            $params['is_active'] = $data['is_active'];
+        }
+
+        if (isset($data['foto_profil'])) {
+            $fields[] = "foto_profil = :foto_profil";
+            $params['foto_profil'] = $data['foto_profil'];
+        }
+
+        if (empty($fields)) {
+            return false;
+        }
+
+        $sql = "UPDATE users SET " . implode(", ", $fields) . " WHERE id = :id";
+        return Database::execute($sql, $params);
+    }
+
+    /**
+     * Delete user
+     */
+    public static function delete(int $id): bool
+    {
+        return Database::execute("DELETE FROM users WHERE id = :id", ['id' => $id]);
+    }
+
+    /**
+     * Update user password
+     */
+    public static function updatePassword(int $id, string $password): bool
+    {
+        return Database::execute(
+            "UPDATE users SET password = :password WHERE id = :id",
+            [
+                'id' => $id,
+                'password' => hashPassword($password)
+            ]
+        ) > 0;
+    }
+
+    /**
      * Check if username exists
      */
     public static function usernameExists(string $username, ?int $excludeId = null): bool

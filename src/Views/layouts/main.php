@@ -7,6 +7,12 @@
     <meta name="description" content="Sistem Informasi & Pelaporan Huffadz Jawa Timur">
     <title><?= htmlspecialchars($title ?? APP_NAME) ?></title>
 
+    <?php
+    $favicon = Setting::get('app_favicon');
+    if ($favicon): ?>
+        <link rel="icon" type="image/x-icon" href="<?= APP_URL . $favicon ?>">
+    <?php endif; ?>
+
     <!-- Bootstrap 5 CSS (CDN) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -130,9 +136,15 @@
                 <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse" id="sidebarMenu">
                     <div class="position-sticky pt-3">
                         <div class="text-center text-white mb-4 pb-3 border-bottom border-light border-opacity-25">
-                            <i class="bi bi-book-half fs-1"></i>
-                            <h6 class="mt-2 mb-0">SiHafiz Jatim</h6>
-                            <small class="opacity-75">Tahun <?= TAHUN_ANGGARAN ?></small>
+                            <?php
+                            $logo = Setting::get('app_logo');
+                            if ($logo): ?>
+                                <img src="<?= APP_URL . $logo ?>" alt="Logo" class="img-fluid mb-2" style="max-height: 80px;">
+                            <?php else: ?>
+                                <i class="bi bi-book-half fs-1"></i>
+                            <?php endif; ?>
+                            <h6 class="mt-2 mb-0"><?= htmlspecialchars(Setting::get('app_name', APP_NAME)) ?></h6>
+                            <small class="opacity-75">Tahun <?= Setting::get('tahun_aktif', TAHUN_ANGGARAN) ?></small>
                         </div>
 
                         <ul class="nav flex-column">
@@ -157,9 +169,28 @@
                                         <i class="bi bi-file-earmark-check"></i> Verifikasi Laporan
                                     </a>
                                 </li>
+                            <?php endif; ?>
+
+                            <?php if ($role === ROLE_ADMIN_PROV || $role === ROLE_ADMIN_KABKO || $role === ROLE_PENGUJI): ?>
                                 <li class="nav-item">
                                     <a class="nav-link <?= strpos($currentUri, '/seleksi') !== false ? 'active' : '' ?>" href="<?= APP_URL ?>/seleksi">
                                         <i class="bi bi-clipboard-check"></i> Seleksi & Penilaian
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+
+                            <?php if ($role === ROLE_ADMIN_PROV): ?>
+                                <li class="nav-item mt-3">
+                                    <small class="text-white opacity-50 px-3 text-uppercase fw-bold" style="font-size: 0.7rem;">Pengaturan</small>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link <?= strpos($currentUri, '/admin/users') !== false ? 'active' : '' ?>" href="<?= APP_URL ?>/admin/users">
+                                        <i class="bi bi-people-fill"></i> Manajemen User
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link <?= strpos($currentUri, '/admin/settings') !== false ? 'active' : '' ?>" href="<?= APP_URL ?>/admin/settings">
+                                        <i class="bi bi-gear-fill"></i> Pengaturan Web
                                     </a>
                                 </li>
                             <?php endif; ?>
@@ -199,8 +230,26 @@
                             <i class="bi bi-list"></i>
                         </button>
                         <div class="d-flex align-items-center">
-                            <span class="text-muted me-2">Halo,</span>
-                            <strong><?= htmlspecialchars($_SESSION['nama'] ?? $_SESSION['username'] ?? 'User') ?></strong>
+                            <div class="dropdown">
+                                <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <?php if (!empty($_SESSION['foto_profil'])): ?>
+                                        <img src="<?= APP_URL . $_SESSION['foto_profil'] ?>" alt="Profile" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;">
+                                    <?php else: ?>
+                                        <i class="bi bi-person-circle fs-4 me-2 text-primary"></i>
+                                    <?php endif; ?>
+                                    <div class="me-3 d-none d-sm-block text-start">
+                                        <div class="small text-muted" style="line-height: 1;">Halo,</div>
+                                        <strong><?= htmlspecialchars($_SESSION['nama'] ?? $_SESSION['username'] ?? 'User') ?></strong>
+                                    </div>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end text-small shadow" aria-labelledby="dropdownUser1">
+                                    <li><a class="dropdown-item" href="<?= APP_URL ?>/profile"><i class="bi bi-person me-2"></i>Profil Saya</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li><a class="dropdown-item text-danger" href="<?= APP_URL ?>/logout"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                                </ul>
+                            </div>
                             <span class="badge bg-secondary ms-2"><?= ucfirst(str_replace('_', ' ', getCurrentUserRole())) ?></span>
                         </div>
                     </div>

@@ -132,7 +132,7 @@ Setelah instalasi, gunakan kredensial berikut:
 
 | Role | Username | Password |
 |------|----------|----------|
-| Admin Provinsi | `admin` | `admin123` |
+| Admin Provinsi | `admin` | `password |
 
 > ⚠️ **PENTING**: Segera ganti password default setelah login!
 

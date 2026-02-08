@@ -1,0 +1,10 @@
+# =====================================================
+# Upload to public_html/.htaccess
+# This redirects all requests to the public folder
+# =====================================================
+
+RewriteEngine On
+
+# Redirect to public folder
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ /public/$1 [L,QSA]

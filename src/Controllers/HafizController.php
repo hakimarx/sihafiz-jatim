@@ -19,12 +19,41 @@ class HafizController extends Controller
 
         // Get hafiz data
         $this->hafiz = Hafiz::findByUserId(getCurrentUserId());
-
         if (!$this->hafiz) {
-            setFlash('error', 'Data hafiz tidak ditemukan. Hubungi administrator.');
-            logout();
-            header('Location: ' . APP_URL . '/login');
-            exit;
+            // Jika data hafiz belum lengkap (misal dibuat dari Manajemen User), 
+            // jangan langsung logout, tapi arahkan agar lapor ke admin atau lengkapi data.
+            $currentUri = $_SERVER['REQUEST_URI'];
+            if (strpos($currentUri, '/hafiz/profil') === false) {
+                setFlash('error', 'Profil Anda belum lengkap. Silakan hubungi administrator untuk melengkapi data NIK dan wilayah anda agar bisa mengisi laporan.');
+                header('Location: ' . APP_URL . '/hafiz/profil');
+                exit;
+            }
+
+            // Create dummy object so profile view doesn't crash
+            $user = User::findById(getCurrentUserId());
+            $this->hafiz = [
+                'id' => 0,
+                'nama' => $user['nama'] ?: $user['username'],
+                'kabupaten_kota_nama' => 'Belum Diatur',
+                'status_kelulusan' => 'pending',
+                'nik' => '-',
+                'tempat_lahir' => '-',
+                'tanggal_lahir' => date('Y-m-d'),
+                'jenis_kelamin' => 'L',
+                'alamat' => 'Belum Lengkap',
+                'desa_kelurahan' => '-',
+                'kecamatan' => '-',
+                'telepon' => $user['telepon'],
+                'email' => $user['email'],
+                'sertifikat_tahfidz' => '-',
+                'mengajar' => 0,
+                'tahun_tes' => TAHUN_ANGGARAN,
+                'status_insentif' => 'tidak_aktif',
+                'nama_bank' => '-',
+                'nomor_rekening' => '-',
+                'rt' => '',
+                'rw' => ''
+            ];
         }
     }
 
@@ -88,7 +117,8 @@ class HafizController extends Controller
         $tanggal = $this->input('tanggal');
         $jenisKegiatan = $this->input('jenis_kegiatan');
         $deskripsi = $this->input('deskripsi');
-        $lokasi = $this->input('lokasi');
+        $lokasi = trim($this->input('lokasi'));
+        if ($lokasi === '') $lokasi = null;
         $durasiMenit = (int) $this->input('durasi_menit');
 
         // Validation
@@ -109,9 +139,18 @@ class HafizController extends Controller
         // Handle foto upload
         $fotoPath = null;
         if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
-            $fotoPath = $this->handleFotoUpload($_FILES['foto']);
+            $fotoPath = $this->handleFotoUploadCompressed($_FILES['foto'], 'foto-kegiatan');
             if ($fotoPath === false) {
-                $errors[] = 'Gagal mengupload foto. Pastikan format JPG/PNG dan ukuran maksimal 2MB.';
+                $errors[] = 'Gagal mengupload foto. Pastikan format JPG/PNG.';
+            } else {
+                // Auto-detect location & date from EXIF (Ambil dari file asli sebelum kompresi)
+                $exif = $this->extractExifData($_FILES['foto']['tmp_name']);
+                if ($exif['date'] && empty($tanggal)) {
+                    $tanggal = $exif['date'];
+                }
+                if ($exif['location_str'] && empty($lokasi)) {
+                    $lokasi = $exif['location_str'];
+                }
             }
         }
 
@@ -129,7 +168,7 @@ class HafizController extends Controller
                 'deskripsi' => $deskripsi,
                 'foto' => $fotoPath,
                 'lokasi' => $lokasi,
-                'durasi_menit' => $durasiMenit ?: null,
+                'durasi_menit' => null, // Dihapus sesuai permintaan
             ]);
 
             setFlash('success', 'Laporan harian berhasil disimpan.');
@@ -192,15 +231,24 @@ class HafizController extends Controller
             'tanggal' => $this->input('tanggal'),
             'jenis_kegiatan' => $this->input('jenis_kegiatan'),
             'deskripsi' => $this->input('deskripsi'),
-            'lokasi' => $this->input('lokasi'),
+            'lokasi' => trim($this->input('lokasi')) !== '' ? trim($this->input('lokasi')) : null,
             'durasi_menit' => (int) $this->input('durasi_menit') ?: null,
         ];
 
         // Handle foto upload
         if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
-            $fotoPath = $this->handleFotoUpload($_FILES['foto']);
+            $fotoPath = $this->handleFotoUploadCompressed($_FILES['foto'], 'foto-kegiatan');
             if ($fotoPath !== false) {
                 $updateData['foto'] = $fotoPath;
+
+                // Auto-detect metadata if empty (Ambil dari file asli sebelum kompresi)
+                $exif = $this->extractExifData($_FILES['foto']['tmp_name']);
+                if ($exif['date'] && empty($updateData['tanggal'])) {
+                    $updateData['tanggal'] = $exif['date'];
+                }
+                if ($exif['location_str'] && empty($updateData['lokasi'])) {
+                    $updateData['lokasi'] = $exif['location_str'];
+                }
             }
         }
 
@@ -244,16 +292,10 @@ class HafizController extends Controller
     }
 
     /**
-     * Handle foto upload
+     * Handle foto upload with compression
      */
-    private function handleFotoUpload(array $file): string|false
+    private function handleFotoUploadCompressed(array $file, string $subDir): string|false
     {
-        // Validate file size
-        if ($file['size'] > MAX_UPLOAD_SIZE) {
-            return false;
-        }
-
-        // Validate file type
         $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
         $finfo = new finfo(FILEINFO_MIME_TYPE);
         $mimeType = $finfo->file($file['tmp_name']);
@@ -263,12 +305,19 @@ class HafizController extends Controller
         }
 
         // Generate unique filename
-        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $filename = uniqid('laporan_') . '_' . time() . '.' . $extension;
-        $destination = UPLOAD_PATH . '/foto-kegiatan/' . $filename;
+        $extension = 'jpg'; // Always save as jpg for compression
+        $filename = uniqid('img_') . '_' . time() . '.' . $extension;
+        $targetDir = UPLOAD_PATH . '/' . $subDir . '/';
 
-        if (move_uploaded_file($file['tmp_name'], $destination)) {
-            return '/uploads/foto-kegiatan/' . $filename;
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0755, true);
+        }
+
+        $destination = $targetDir . $filename;
+
+        // Compress to 400KB
+        if ($this->compressImage($file['tmp_name'], $destination, 409600)) {
+            return '/uploads/' . $subDir . '/' . $filename;
         }
 
         return false;
@@ -279,9 +328,144 @@ class HafizController extends Controller
      */
     public function profil(): void
     {
+        $mengajarList = Hafiz::getMengajarList($this->hafiz['id']);
+
         $this->view('hafiz.profil', [
             'title' => 'Profil Saya - ' . APP_NAME,
             'hafiz' => $this->hafiz,
+            'mengajarList' => $mengajarList
         ]);
+    }
+
+    /**
+     * Form Edit Profil
+     */
+    public function profilEdit(): void
+    {
+        $kabkoList = KabupatenKota::getForDropdown();
+        $this->view('hafiz.profil-edit', [
+            'title' => 'Edit Profil - ' . APP_NAME,
+            'hafiz' => $this->hafiz,
+            'kabkoList' => $kabkoList
+        ]);
+    }
+
+    /**
+     * Update Profil
+     */
+    public function profilUpdate(): void
+    {
+        if (!$this->isPost() || !$this->validateCsrf()) {
+            setFlash('error', 'Request tidak valid.');
+            $this->redirect(APP_URL . '/hafiz/profil/edit');
+            return;
+        }
+
+        $updateData = [
+            'nama' => $this->input('nama'),
+            'nik' => $this->input('nik'),
+            'tempat_lahir' => $this->input('tempat_lahir'),
+            'tanggal_lahir' => $this->input('tanggal_lahir'),
+            'jenis_kelamin' => $this->input('jenis_kelamin'),
+            'alamat' => $this->input('alamat'),
+            'desa_kelurahan' => $this->input('desa_kelurahan'),
+            'kecamatan' => $this->input('kecamatan'),
+            'telepon' => $this->input('telepon'),
+            'email' => $this->input('email'),
+            'nama_bank' => $this->input('nama_bank'),
+            'nomor_rekening' => $this->input('nomor_rekening'),
+        ];
+
+        // Handle Profile Photo
+        if (isset($_FILES['foto_profil']) && $_FILES['foto_profil']['error'] === UPLOAD_ERR_OK) {
+            $path = $this->handleFotoUploadCompressed($_FILES['foto_profil'], 'foto-profil');
+            if ($path) $updateData['foto_profil'] = $path;
+        }
+
+        // Handle KTP Photo
+        if (isset($_FILES['foto_ktp']) && $_FILES['foto_ktp']['error'] === UPLOAD_ERR_OK) {
+            $path = $this->handleFotoUploadCompressed($_FILES['foto_ktp'], 'foto-ktp');
+            if ($path) $updateData['foto_ktp'] = $path;
+        }
+
+        try {
+            Hafiz::update($this->hafiz['id'], $updateData);
+
+            // Sync Nama & Foto to session
+            if (!empty($updateData['nama'])) {
+                User::update(getCurrentUserId(), ['nama' => $updateData['nama']]);
+                $_SESSION['nama'] = $updateData['nama'];
+            }
+            if (!empty($updateData['foto_profil'])) {
+                $_SESSION['foto_profil'] = $updateData['foto_profil'];
+            }
+
+            setFlash('success', 'Profil berhasil diperbarui.');
+            $this->redirect(APP_URL . '/hafiz/profil');
+        } catch (Exception $e) {
+            setFlash('error', 'Gagal memperbarui profil: ' . $e->getMessage());
+            $this->redirect(APP_URL . '/hafiz/profil/edit');
+        }
+    }
+
+    /**
+     * Form Change Password
+     */
+    public function passwordEdit(): void
+    {
+        $this->view('hafiz.password', [
+            'title' => 'Ubah Password - ' . APP_NAME,
+            'hafiz' => $this->hafiz
+        ]);
+    }
+
+    /**
+     * Process Change Password
+     */
+    public function passwordUpdate(): void
+    {
+        if (!$this->isPost() || !$this->validateCsrf()) {
+            setFlash('error', 'Request tidak valid.');
+            $this->redirect(APP_URL . '/hafiz/password');
+            return;
+        }
+
+        $oldPassword = $_POST['old_password'] ?? '';
+        $newPassword = $_POST['new_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        if (empty($oldPassword) || empty($newPassword)) {
+            setFlash('error', 'Password lama dan baru harus diisi.');
+            $this->redirect(APP_URL . '/hafiz/password');
+            return;
+        }
+
+        if ($newPassword !== $confirmPassword) {
+            setFlash('error', 'Konfirmasi password baru tidak cocok.');
+            $this->redirect(APP_URL . '/hafiz/password');
+            return;
+        }
+
+        if (strlen($newPassword) < 6) {
+            setFlash('error', 'Password minimal 6 karakter.');
+            $this->redirect(APP_URL . '/hafiz/password');
+            return;
+        }
+
+        $user = User::findById(getCurrentUserId());
+        if (!verifyPassword($oldPassword, $user['password'])) {
+            setFlash('error', 'Password lama Anda salah.');
+            $this->redirect(APP_URL . '/hafiz/password');
+            return;
+        }
+
+        try {
+            User::updatePassword(getCurrentUserId(), $newPassword);
+            setFlash('success', 'Password berhasil diubah.');
+            $this->redirect(APP_URL . '/hafiz/profil');
+        } catch (Exception $e) {
+            setFlash('error', 'Gagal mengubah password.');
+            $this->redirect(APP_URL . '/hafiz/password');
+        }
     }
 }

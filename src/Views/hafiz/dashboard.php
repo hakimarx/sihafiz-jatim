@@ -1,103 +1,72 @@
-<div class="page-header">
-    <h4 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h4>
-</div>
-
-<!-- Profil Singkat -->
-<div class="card mb-4 border-start border-success border-4">
-    <div class="card-body">
-        <div class="row align-items-center">
-            <div class="col-auto">
-                <div class="bg-success bg-opacity-10 rounded-circle p-3">
-                    <i class="bi bi-person-circle text-success fs-1"></i>
-                </div>
-            </div>
-            <div class="col">
-                <h5 class="mb-1"><?= htmlspecialchars($hafiz['nama']) ?></h5>
-                <p class="text-muted mb-0">
-                    <i class="bi bi-card-text me-1"></i>NIK: <?= htmlspecialchars($hafiz['nik']) ?> &bull;
-                    <i class="bi bi-geo-alt me-1"></i><?= htmlspecialchars($hafiz['kabupaten_kota_nama']) ?>
-                </p>
-            </div>
-            <div class="col-auto">
-                <span class="badge bg-<?= $hafiz['status_kelulusan'] === 'lulus' ? 'success' : ($hafiz['status_kelulusan'] === 'pending' ? 'warning' : 'danger') ?> fs-6">
-                    <?= ucfirst(str_replace('_', ' ', $hafiz['status_kelulusan'])) ?>
-                </span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Ringkasan Bulan Ini -->
+<!-- Welcome Section -->
 <div class="row mb-4">
-    <div class="col-md-3 mb-3">
-        <div class="card text-center h-100">
-            <div class="card-body">
-                <i class="bi bi-journal-text text-primary fs-1 mb-2"></i>
-                <h3 class="mb-0"><?= $summary['total_laporan'] ?? 0 ?></h3>
-                <small class="text-muted">Total Laporan</small>
+    <div class="col-12 text-center py-4">
+        <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex p-4 mb-3">
+            <i class="bi bi-person-check text-success display-4"></i>
+        </div>
+        <h2 class="fw-bold">Selamat Datang, <?= htmlspecialchars(explode(' ', $hafiz['nama'])[0]) ?>!</h2>
+        <p class="lead text-muted">Aplikasi Laporan Harian Huffadz Jatim</p>
+    </div>
+</div>
+
+<!-- Main Action Buttons (LARGE) -->
+<div class="row g-4 mb-5">
+    <!-- Input Laporan Button -->
+    <div class="col-md-6">
+        <a href="<?= APP_URL ?>/hafiz/laporan/create" class="card h-100 text-decoration-none border-0 shadow-lg hover-scale" style="background: linear-gradient(135deg, #198754 0%, #157347 100%); transition: transform 0.2s;">
+            <div class="card-body text-center py-5 text-white">
+                <i class="bi bi-plus-circle display-1 mb-3"></i>
+                <h2 class="fw-bold">ISI LAPORAN</h2>
+                <p class="opacity-75 fs-5">Klik di sini untuk menambah setoran/kegiatan</p>
             </div>
+        </a>
+    </div>
+
+    <!-- Riwayat Laporan Button -->
+    <div class="col-md-6">
+        <a href="<?= APP_URL ?>/hafiz/laporan" class="card h-100 text-decoration-none border-0 shadow-lg hover-scale" style="background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%); transition: transform 0.2s;">
+            <div class="card-body text-center py-5 text-white">
+                <i class="bi bi-journal-text display-1 mb-3"></i>
+                <h2 class="fw-bold">LIHAT RIWAYAT</h2>
+                <p class="opacity-75 fs-5">Klik di sini untuk melihat laporan yang sudah dikirim</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Status & Stats (Simple) -->
+<div class="row mb-4 text-center">
+    <div class="col-6 col-md-3 mb-3">
+        <div class="p-3 bg-white rounded shadow-sm border-start border-primary border-4">
+            <h1 class="fw-bold mb-0"><?= $summary['total_laporan'] ?? 0 ?></h1>
+            <small class="text-muted text-uppercase fw-bold">Total Dikirim</small>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card text-center h-100 border-success">
-            <div class="card-body">
-                <i class="bi bi-check-circle text-success fs-1 mb-2"></i>
-                <h3 class="mb-0 text-success"><?= $summary['disetujui'] ?? 0 ?></h3>
-                <small class="text-muted">Disetujui</small>
-            </div>
+    <div class="col-6 col-md-3 mb-3">
+        <div class="p-3 bg-white rounded shadow-sm border-start border-success border-4">
+            <h1 class="fw-bold mb-0 text-success"><?= $summary['disetujui'] ?? 0 ?></h1>
+            <small class="text-muted text-uppercase fw-bold">Disetujui</small>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card text-center h-100 border-warning">
-            <div class="card-body">
-                <i class="bi bi-hourglass-split text-warning fs-1 mb-2"></i>
-                <h3 class="mb-0 text-warning"><?= $summary['pending'] ?? 0 ?></h3>
-                <small class="text-muted">Menunggu</small>
-            </div>
+    <div class="col-6 col-md-3 mb-3">
+        <div class="p-3 bg-white rounded shadow-sm border-start border-warning border-4">
+            <h1 class="fw-bold mb-0 text-warning"><?= $summary['pending'] ?? 0 ?></h1>
+            <small class="text-muted text-uppercase fw-bold">Menunggu</small>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card text-center h-100 border-danger">
-            <div class="card-body">
-                <i class="bi bi-x-circle text-danger fs-1 mb-2"></i>
-                <h3 class="mb-0 text-danger"><?= $summary['ditolak'] ?? 0 ?></h3>
-                <small class="text-muted">Ditolak</small>
-            </div>
+    <div class="col-6 col-md-3 mb-3">
+        <div class="p-3 bg-white rounded shadow-sm border-start border-info border-4">
+            <h1 class="fw-bold mb-0 text-info"><?= $hafiz['status_kelulusan'] === 'lulus' ? 'Aktif' : 'Non-Aktif' ?></h1>
+            <small class="text-muted text-uppercase fw-bold">Status Saya</small>
         </div>
     </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="row text-center">
-            <div class="col-4">
-                <a href="<?= APP_URL ?>/hafiz/laporan/create" class="text-decoration-none">
-                    <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-2">
-                        <i class="bi bi-plus-lg text-primary fs-4"></i>
-                    </div>
-                    <p class="mb-0 text-dark">Input Laporan</p>
-                </a>
-            </div>
-            <div class="col-4">
-                <a href="<?= APP_URL ?>/hafiz/laporan" class="text-decoration-none">
-                    <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex p-3 mb-2">
-                        <i class="bi bi-list-ul text-success fs-4"></i>
-                    </div>
-                    <p class="mb-0 text-dark">Riwayat Laporan</p>
-                </a>
-            </div>
-            <div class="col-4">
-                <a href="<?= APP_URL ?>/hafiz/profil" class="text-decoration-none">
-                    <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex p-3 mb-2">
-                        <i class="bi bi-person text-info fs-4"></i>
-                    </div>
-                    <p class="mb-0 text-dark">Profil Saya</p>
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
+<style>
+    .hover-scale:hover {
+        transform: scale(1.02);
+    }
+</style>
 
 <!-- Laporan Terbaru -->
 <div class="card">

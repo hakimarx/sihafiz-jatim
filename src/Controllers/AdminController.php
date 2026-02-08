@@ -21,7 +21,18 @@ class AdminController extends Controller
      */
     public function dashboard(): void
     {
-        $stats = Hafiz::getStatsByKabko();
+        $kabkoId = null;
+        $pendingApproval = 0;
+
+        if (hasRole(ROLE_ADMIN_KABKO)) {
+            $user = User::findById(getCurrentUserId());
+            $kabkoId = $user['kabupaten_kota_id'];
+
+            // Count pending hafiz for approval (status_kelulusan = 'pending' and recently registered)
+            $pendingApproval = Hafiz::countPendingByKabko($kabkoId);
+        }
+
+        $stats = Hafiz::getStatsByKabko(null, $kabkoId);
 
         // Hitung total
         $totalPendaftar = array_sum(array_column($stats, 'total_pendaftar'));
@@ -34,6 +45,7 @@ class AdminController extends Controller
             'totalPendaftar' => $totalPendaftar,
             'totalLulus' => $totalLulus,
             'totalPending' => $totalPending,
+            'pendingApproval' => $pendingApproval,
         ]);
     }
 
@@ -86,6 +98,7 @@ class AdminController extends Controller
             'title' => 'Tambah Data Hafiz - ' . APP_NAME,
             'hafiz' => null,
             'kabkoList' => $kabkoList,
+            'mengajarList' => [],
             'defaultKabko' => $defaultKabko,
             'isEdit' => false,
         ]);
@@ -154,6 +167,24 @@ class AdminController extends Controller
                 'tempat_mengajar' => $this->input('tempat_mengajar'),
             ]);
 
+            // Handle additional teaching locations
+            $mengajarTempat = $this->input('mengajar_tempat');
+            $mengajarTmt = $this->input('mengajar_tmt');
+            if (is_array($mengajarTempat)) {
+                $mengajarList = [];
+                foreach ($mengajarTempat as $i => $tempat) {
+                    if (!empty($tempat) && !empty($mengajarTmt[$i])) {
+                        $mengajarList[] = [
+                            'tempat' => $tempat,
+                            'tmt' => $mengajarTmt[$i]
+                        ];
+                    }
+                }
+                if (!empty($mengajarList)) {
+                    Hafiz::updateMengajarList($hafizId, $mengajarList);
+                }
+            }
+
             setFlash('success', 'Data Hafiz berhasil ditambahkan. Password default: NIK');
             $this->redirect(APP_URL . '/admin/hafiz');
         } catch (Exception $e) {
@@ -177,11 +208,13 @@ class AdminController extends Controller
         }
 
         $kabkoList = KabupatenKota::getForDropdown();
+        $mengajarList = Hafiz::getMengajarList((int) $id);
 
         $this->view('admin.hafiz-form', [
             'title' => 'Edit Data Hafiz - ' . APP_NAME,
             'hafiz' => $hafiz,
             'kabkoList' => $kabkoList,
+            'mengajarList' => $mengajarList,
             'defaultKabko' => $hafiz['kabupaten_kota_id'],
             'isEdit' => true,
         ]);
@@ -228,6 +261,22 @@ class AdminController extends Controller
                 'tempat_mengajar' => $this->input('tempat_mengajar'),
                 'keterangan' => $this->input('keterangan'),
             ]);
+
+            // Handle additional teaching locations
+            $mengajarTempat = $this->input('mengajar_tempat');
+            $mengajarTmt = $this->input('mengajar_tmt');
+            $mengajarList = [];
+            if (is_array($mengajarTempat)) {
+                foreach ($mengajarTempat as $i => $tempat) {
+                    if (!empty($tempat) && !empty($mengajarTmt[$i])) {
+                        $mengajarList[] = [
+                            'tempat' => $tempat,
+                            'tmt' => $mengajarTmt[$i]
+                        ];
+                    }
+                }
+            }
+            Hafiz::updateMengajarList($hafizId, $mengajarList);
 
             setFlash('success', 'Data Hafiz berhasil diperbarui.');
             $this->redirect(APP_URL . '/admin/hafiz');
@@ -315,5 +364,384 @@ class AdminController extends Controller
         }
 
         $this->redirect(APP_URL . '/admin/laporan');
+    }
+
+    /**
+     * List Users (Admin Provinsi only)
+     */
+    public function userList(): void
+    {
+        requireRole(ROLE_ADMIN_PROV);
+
+        $page = (int) ($this->input('page') ?: 1);
+        $filters = [
+            'search' => $this->input('search'),
+            'role' => $this->input('role'),
+            'kabupaten_kota_id' => $this->input('kabupaten_kota_id'),
+        ];
+
+        $result = User::getAll($filters, $page);
+        $kabkoList = KabupatenKota::getForDropdown();
+
+        $this->view('admin.user-list', [
+            'title' => 'Manajemen User - ' . APP_NAME,
+            'users' => $result['data'],
+            'pagination' => $result,
+            'filters' => $filters,
+            'kabkoList' => $kabkoList,
+        ]);
+    }
+
+    /**
+     * Form tambah user
+     */
+    public function userCreate(): void
+    {
+        requireRole(ROLE_ADMIN_PROV);
+
+        $kabkoList = KabupatenKota::getForDropdown();
+
+        $this->view('admin.user-form', [
+            'title' => 'Tambah User - ' . APP_NAME,
+            'user' => null,
+            'kabkoList' => $kabkoList,
+            'isEdit' => false,
+        ]);
+    }
+
+    /**
+     * Store new user
+     */
+    public function userStore(): void
+    {
+        requireRole(ROLE_ADMIN_PROV);
+
+        if (!$this->isPost() || !$this->validateCsrf()) {
+            setFlash('error', 'Request tidak valid.');
+            $this->redirect(APP_URL . '/admin/users');
+            return;
+        }
+
+        $username = $this->input('username');
+        $password = $this->input('password');
+        $role = $this->input('role');
+        $kabkoId = $this->input('kabupaten_kota_id') ?: null;
+        $nama = $this->input('nama');
+
+        if (User::usernameExists($username)) {
+            setFlash('error', 'Username sudah digunakan.');
+            $this->redirect(APP_URL . '/admin/users/create');
+            return;
+        }
+
+        User::create([
+            'username' => $username,
+            'password' => $password,
+            'role' => $role,
+            'kabupaten_kota_id' => $kabkoId,
+            'nama' => $nama,
+            'email' => $this->input('email'),
+            'telepon' => $this->input('telepon'),
+        ]);
+
+        setFlash('success', 'User berhasil ditambahkan.');
+        $this->redirect(APP_URL . '/admin/users');
+    }
+
+    /**
+     * Form edit user
+     */
+    public function userEdit(string $id): void
+    {
+        requireRole(ROLE_ADMIN_PROV);
+
+        $user = User::findById((int) $id);
+        if (!$user) {
+            setFlash('error', 'User tidak ditemukan.');
+            $this->redirect(APP_URL . '/admin/users');
+            return;
+        }
+
+        $kabkoList = KabupatenKota::getForDropdown();
+
+        $this->view('admin.user-form', [
+            'title' => 'Edit User - ' . APP_NAME,
+            'user' => $user,
+            'kabkoList' => $kabkoList,
+            'isEdit' => true,
+        ]);
+    }
+
+    /**
+     * Update user
+     */
+    public function userUpdate(string $id): void
+    {
+        requireRole(ROLE_ADMIN_PROV);
+
+        if (!$this->isPost() || !$this->validateCsrf()) {
+            setFlash('error', 'Request tidak valid.');
+            $this->redirect(APP_URL . '/admin/users');
+            return;
+        }
+
+        $userId = (int) $id;
+        $username = $this->input('username');
+
+        if (User::usernameExists($username, $userId)) {
+            setFlash('error', 'Username sudah digunakan oleh user lain.');
+            $this->redirect(APP_URL . '/admin/users/' . $id . '/edit');
+            return;
+        }
+
+        $data = [
+            'username' => $username,
+            'role' => $this->input('role'),
+            'kabupaten_kota_id' => $this->input('kabupaten_kota_id') ?: null,
+            'nama' => $this->input('nama'),
+            'email' => $this->input('email'),
+            'telepon' => $this->input('telepon'),
+            'is_active' => $this->input('is_active') ? 1 : 0,
+        ];
+
+        if (!empty($this->input('password'))) {
+            $data['password'] = $this->input('password');
+        }
+
+        User::update($userId, $data);
+
+        setFlash('success', 'User berhasil diperbarui.');
+        $this->redirect(APP_URL . '/admin/users');
+    }
+
+    /**
+     * Delete user
+     */
+    public function userDelete(string $id): void
+    {
+        requireRole(ROLE_ADMIN_PROV);
+
+        if (!$this->isPost() || !$this->validateCsrf()) {
+            setFlash('error', 'Request tidak valid.');
+            $this->redirect(APP_URL . '/admin/users');
+            return;
+        }
+
+        if ((int)$id === getCurrentUserId()) {
+            setFlash('error', 'Anda tidak bisa menghapus akun sendiri.');
+            $this->redirect(APP_URL . '/admin/users');
+            return;
+        }
+
+        User::delete((int) $id);
+        setFlash('success', 'User berhasil dihapus.');
+        $this->redirect(APP_URL . '/admin/users');
+    }
+
+    /**
+     * Settings Page
+     */
+    public function settings(): void
+    {
+        requireRole(ROLE_ADMIN_PROV);
+
+        $this->view('admin.settings', [
+            'title' => 'Pengaturan Aplikasi - ' . APP_NAME,
+            'settings' => Setting::getAll(),
+        ]);
+    }
+
+    /**
+     * Update Settings
+     */
+    public function settingsUpdate(): void
+    {
+        requireRole(ROLE_ADMIN_PROV);
+
+        if (!$this->isPost() || !$this->validateCsrf()) {
+            setFlash('error', 'Request tidak valid.');
+            $this->redirect(APP_URL . '/admin/settings');
+            return;
+        }
+
+        // Handle regular settings
+        $keys = ['app_name', 'app_address', 'tahun_aktif'];
+        foreach ($keys as $key) {
+            if ($this->input($key) !== null) {
+                Setting::set($key, $this->input($key));
+            }
+        }
+
+        // Handle File Uploads (Logo & Favicon)
+        if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+            $logoPath = $this->handleFileUpload($_FILES['logo'], 'logo');
+            if ($logoPath) {
+                Setting::set('app_logo', $logoPath);
+            }
+        }
+
+        if (isset($_FILES['favicon']) && $_FILES['favicon']['error'] === UPLOAD_ERR_OK) {
+            $faviconPath = $this->handleFileUpload($_FILES['favicon'], 'favicon');
+            if ($faviconPath) {
+                Setting::set('app_favicon', $faviconPath);
+            }
+        }
+
+        setFlash('success', 'Pengaturan berhasil diperbarui.');
+        $this->redirect(APP_URL . '/admin/settings');
+    }
+
+    /**
+     * Process import from CSV (converted from Excel)
+     */
+    public function importProcess(): void
+    {
+        requireRole(ROLE_ADMIN_PROV);
+
+        if (!$this->isPost() || !$this->validateCsrf()) {
+            setFlash('error', 'Request tidak valid.');
+            $this->redirect(APP_URL . '/admin/settings');
+            return;
+        }
+
+        if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+            setFlash('error', 'Silakan unggah file CSV hasil konversi Excel.');
+            $this->redirect(APP_URL . '/admin/settings');
+            return;
+        }
+
+        $filePath = $_FILES['csv_file']['tmp_name'];
+        $handle = fopen($filePath, "r");
+
+        // Read header
+        $header = fgetcsv($handle, 1000, ";");
+
+        $imported = 0;
+        $skipped = 0;
+        $total = 0;
+
+        $kabkoList = Database::query("SELECT id, nama FROM kabupaten_kota");
+        $kabkoMap = [];
+        foreach ($kabkoList as $k) {
+            $normalized = trim(str_replace(['kabupaten ', 'kota ', 'kab. ', 'k. '], '', strtolower($k['nama'])));
+            $kabkoMap[$normalized] = $k['id'];
+        }
+
+        while (($line = fgets($handle)) !== FALSE) {
+            if (trim($line) === '') continue;
+            $data = explode(';', $line);
+            if (count($data) < 17) continue;
+
+            $total++;
+            $csvData = [
+                'tahun' => preg_replace('/[^0-9]/', '', $data[1] ?? '2023'),
+                'kabko_name' => $data[16] ?? '',
+                'nik' => preg_replace('/[^0-9]/', '', $data[4] ?? ''),
+                'nama' => trim($data[5] ?? ''),
+                'tempat_lahir' => trim($data[6] ?? ''),
+                'tanggal_lahir' => trim($data[8] ?? ''),
+                'jk' => trim($data[10] ?? 'L'),
+                'alamat' => trim($data[11] ?? ''),
+                'rt' => trim($data[12] ?? ''),
+                'rw' => trim($data[13] ?? ''),
+                'desa' => trim($data[14] ?? ''),
+                'kecamatan' => trim($data[15] ?? ''),
+                'sertifikat' => trim($data[17] ?? ''),
+                'mengajar' => trim($data[18] ?? ''),
+                'telepon' => preg_replace('/[^0-9]/', '', $data[20] ?? ''),
+                'lulus' => trim($data[22] ?? '')
+            ];
+
+            if (empty($csvData['nik']) || strlen($csvData['nik']) < 10) {
+                $skipped++;
+                continue;
+            }
+
+            $kabkoNormalized = trim(str_replace(['kabupaten ', 'kota ', 'kab. ', 'k. '], '', strtolower($csvData['kabko_name'])));
+            $kabkoId = $kabkoMap[$kabkoNormalized] ?? null;
+
+            if (!$kabkoId) {
+                // Try column 3 if 16 fails
+                $kabkoNormalized2 = trim(str_replace(['kabupaten ', 'kota ', 'kab. ', 'k. '], '', strtolower($data[3] ?? '')));
+                $kabkoId = $kabkoMap[$kabkoNormalized2] ?? null;
+            }
+
+            if (!$kabkoId) {
+                $skipped++;
+                continue;
+            }
+
+            if (Hafiz::nikExists($csvData['nik'], (int)$csvData['tahun'])) {
+                $skipped++;
+                continue;
+            }
+
+            try {
+                // Convert date (DD/MM/YYYY to YYYY-MM-DD)
+                $birthDate = null;
+                if (!empty($csvData['tanggal_lahir'])) {
+                    $p = explode('/', $csvData['tanggal_lahir']);
+                    if (count($p) === 3) {
+                        $birthDate = "{$p[2]}-{$p[1]}-{$p[0]}";
+                    }
+                }
+
+                Hafiz::create([
+                    'nik' => $csvData['nik'],
+                    'nama' => strtoupper($csvData['nama']),
+                    'tempat_lahir' => $csvData['tempat_lahir'],
+                    'tanggal_lahir' => $birthDate,
+                    'jenis_kelamin' => $csvData['jk'] === 'L' ? 'L' : 'P',
+                    'alamat' => $csvData['alamat'],
+                    'rt' => $csvData['rt'],
+                    'rw' => $csvData['rw'],
+                    'desa_kelurahan' => $csvData['desa'],
+                    'kecamatan' => $csvData['kecamatan'],
+                    'kabupaten_kota_id' => $kabkoId,
+                    'telepon' => $csvData['telepon'],
+                    'email' => null,
+                    'sertifikat_tahfidz' => $csvData['sertifikat'],
+                    'mengajar' => $csvData['mengajar'] ? 1 : 0,
+                    'tmt_mengajar' => null,
+                    'tahun_tes' => (int)$csvData['tahun']
+                ]);
+
+                $isLulus = strtolower($csvData['lulus']) === 'lulus' ? 'lulus' : 'pending';
+                if ($isLulus === 'lulus') {
+                    $lastId = Database::lastInsertId();
+                    Database::execute("UPDATE hafiz SET status_kelulusan = 'lulus' WHERE id = :id", ['id' => $lastId]);
+                }
+
+                $imported++;
+            } catch (Exception $e) {
+                $skipped++;
+            }
+        }
+
+        fclose($handle);
+
+        setFlash('success', "Import selesai! Total: $total diproses, $imported berhasil diimport, $skipped dilewati (sudah ada atau data tidak valid).");
+        $this->redirect(APP_URL . '/admin/settings');
+    }
+
+    /**
+     * Helper to handle file upload
+     */
+    private function handleFileUpload(array $file, string $prefix): ?string
+    {
+        $targetDir = UPLOAD_PATH . '/settings/';
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0755, true);
+        }
+
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $fileName = $prefix . '_' . time() . '.' . $extension;
+        $targetFile = $targetDir . $fileName;
+
+        if (move_uploaded_file($file['tmp_name'], $targetFile)) {
+            return '/uploads/settings/' . $fileName;
+        }
+
+        return null;
     }
 }

@@ -8,6 +8,8 @@
 
 class Controller
 {
+    use ImageProcessor;
+
     /**
      * Render view dengan layout
      */

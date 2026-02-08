@@ -21,6 +21,14 @@ class SeleksiController extends Controller
      */
     public function index(): void
     {
+        // Coming Soon untuk non-admin_prov
+        if (!hasRole(ROLE_ADMIN_PROV)) {
+            $this->view('seleksi.coming-soon', [
+                'title' => 'Seleksi & Penilaian - ' . APP_NAME,
+            ]);
+            return;
+        }
+
         $page = (int) ($this->input('page') ?: 1);
         $tahun = (int) ($this->input('tahun') ?: TAHUN_ANGGARAN);
 
@@ -31,8 +39,8 @@ class SeleksiController extends Controller
             'status_lulus' => $this->input('status'),
         ];
 
-        // Filter by kabupaten_kota for admin kabko
-        if (hasRole(ROLE_ADMIN_KABKO)) {
+        // Filter by kabupaten_kota for admin kabko or penguji
+        if (hasRole(ROLE_ADMIN_KABKO) || hasRole(ROLE_PENGUJI)) {
             $user = User::findById(getCurrentUserId());
             $filters['kabupaten_kota_id'] = $user['kabupaten_kota_id'];
         }
@@ -148,8 +156,8 @@ class SeleksiController extends Controller
         $kabkoId = $this->input('kabupaten_kota_id');
         $format = $this->input('format') ?: 'excel';
 
-        // Filter by kabupaten_kota for admin kabko
-        if (hasRole(ROLE_ADMIN_KABKO)) {
+        // Filter by kabupaten_kota for admin kabko or penguji
+        if (hasRole(ROLE_ADMIN_KABKO) || hasRole(ROLE_PENGUJI)) {
             $user = User::findById(getCurrentUserId());
             $kabkoId = $user['kabupaten_kota_id'];
         }

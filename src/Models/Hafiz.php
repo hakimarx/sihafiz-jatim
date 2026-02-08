@@ -118,15 +118,23 @@ class Hafiz
      */
     public static function create(array $data): int
     {
-        // Create user account for Hafiz (password = NIK)
-        $userId = User::create([
-            'username' => $data['telepon'] ?: $data['nik'],
-            'password' => $data['nik'], // Default password = NIK
-            'role' => ROLE_HAFIZ,
-            'nama' => $data['nama'],
-            'email' => $data['email'] ?? null,
-            'telepon' => $data['telepon'] ?? null,
-        ]);
+        // Check if user already exists
+        $username = $data['telepon'] ?: $data['nik'];
+        $user = User::findByUsername($username);
+
+        if ($user) {
+            $userId = $user['id'];
+        } else {
+            // Create user account for Hafiz (password = NIK)
+            $userId = User::create([
+                'username' => $username,
+                'password' => $data['nik'], // Default password = NIK
+                'role' => ROLE_HAFIZ,
+                'nama' => $data['nama'],
+                'email' => $data['email'] ?? null,
+                'telepon' => $data['telepon'] ?? null,
+            ]);
+        };
 
         // Create Hafiz record
         Database::execute(
@@ -176,6 +184,7 @@ class Hafiz
         $params = ['id' => $id];
 
         $allowedFields = [
+            'nik',
             'nama',
             'tempat_lahir',
             'tanggal_lahir',
@@ -197,7 +206,9 @@ class Hafiz
             'nilai_tahfidz',
             'nilai_wawasan',
             'status_insentif',
-            'keterangan'
+            'keterangan',
+            'foto_profil',
+            'foto_ktp'
         ];
 
         foreach ($allowedFields as $field) {
@@ -229,9 +240,16 @@ class Hafiz
     /**
      * Get statistics by Kabupaten/Kota
      */
-    public static function getStatsByKabko(int $tahun = null): array
+    public static function getStatsByKabko(int $tahun = null, ?int $kabkoId = null): array
     {
         $tahun = $tahun ?? TAHUN_ANGGARAN;
+        $where = "h.tahun_tes = :tahun AND h.is_aktif = 1";
+        $params = ['tahun' => $tahun];
+
+        if ($kabkoId) {
+            $where .= " AND k.id = :kabko_id";
+            $params['kabko_id'] = $kabkoId;
+        }
 
         return Database::query(
             "SELECT 
@@ -240,10 +258,10 @@ class Hafiz
                 SUM(CASE WHEN h.status_kelulusan = 'lulus' THEN 1 ELSE 0 END) as total_lulus,
                 SUM(CASE WHEN h.status_kelulusan = 'pending' THEN 1 ELSE 0 END) as total_pending
              FROM kabupaten_kota k
-             LEFT JOIN hafiz h ON k.id = h.kabupaten_kota_id AND h.tahun_tes = :tahun AND h.is_aktif = 1
+             LEFT JOIN hafiz h ON k.id = h.kabupaten_kota_id AND {$where}
              GROUP BY k.id
              ORDER BY k.nama",
-            ['tahun' => $tahun]
+            $params
         );
     }
 
@@ -262,5 +280,58 @@ class Hafiz
 
         $result = Database::queryOne($sql, $params);
         return $result['count'] > 0;
+    }
+
+    /**
+     * Count pending hafiz by kabupaten_kota for notifications
+     */
+    public static function countPendingByKabko(?int $kabkoId): int
+    {
+        if (!$kabkoId) return 0;
+
+        $result = Database::queryOne(
+            "SELECT COUNT(*) as count FROM hafiz 
+             WHERE kabupaten_kota_id = :kabko_id 
+             AND status_kelulusan = 'pending' 
+             AND is_aktif = 1 
+             AND tahun_tes = :tahun",
+            ['kabko_id' => $kabkoId, 'tahun' => TAHUN_ANGGARAN]
+        );
+        return (int) ($result['count'] ?? 0);
+    }
+
+    /**
+     * Get additional teaching locations
+     */
+    public static function getMengajarList(int $hafizId): array
+    {
+        return Database::query(
+            "SELECT * FROM hafiz_mengajar WHERE hafiz_id = :id ORDER BY tmt_mengajar DESC",
+            ['id' => $hafizId]
+        );
+    }
+
+    /**
+     * Update teaching locations list
+     */
+    public static function updateMengajarList(int $hafizId, array $list): void
+    {
+        // Clear existing
+        Database::execute("DELETE FROM hafiz_mengajar WHERE hafiz_id = :id", ['id' => $hafizId]);
+
+        // Insert new ones
+        foreach ($list as $item) {
+            if (empty($item['tempat']) || empty($item['tmt'])) continue;
+
+            Database::execute(
+                "INSERT INTO hafiz_mengajar (hafiz_id, tempat_mengajar, tmt_mengajar) 
+                 VALUES (:id, :tempat, :tmt)",
+                [
+                    'id' => $hafizId,
+                    'tempat' => $item['tempat'],
+                    'tmt' => $item['tmt']
+                ]
+            );
+        }
     }
 }

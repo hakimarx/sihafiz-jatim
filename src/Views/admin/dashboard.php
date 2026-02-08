@@ -53,8 +53,20 @@
 
 <!-- Stats by Kabupaten/Kota -->
 <div class="card">
-    <div class="card-header bg-white py-3">
-        <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Rekap per Kabupaten/Kota - Tahun <?= TAHUN_ANGGARAN ?></h5>
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="bi bi-bar-chart me-2"></i>
+            <?php if (hasRole(ROLE_ADMIN_KABKO) && !empty($stats) && count($stats) === 1): ?>
+                Rekap <?= htmlspecialchars($stats[0]['nama'] ?? '') ?> - Tahun <?= TAHUN_ANGGARAN ?>
+            <?php else: ?>
+                Rekap per Kabupaten/Kota - Tahun <?= TAHUN_ANGGARAN ?>
+            <?php endif; ?>
+        </h5>
+        <?php if (hasRole(ROLE_ADMIN_KABKO) && isset($pendingApproval) && $pendingApproval > 0): ?>
+            <span class="badge bg-danger">
+                <i class="bi bi-bell-fill me-1"></i> <?= $pendingApproval ?> Hafiz Baru Menunggu Approval
+            </span>
+        <?php endif; ?>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">

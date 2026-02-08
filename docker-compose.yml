@@ -6,47 +6,19 @@ services:
       dockerfile: docker/Dockerfile
     container_name: sihafiz_app
     ports:
-      - "8080:80"
+      - "8082:80"
     volumes:
       - .:/var/www/html
     environment:
-      - DB_HOST=db
+      # Menggunakan IP Host (Laragon) agar database jadi satu
+      - DB_HOST=host.docker.internal
+      - DB_PORT=3306
       - DB_NAME=sihafiz_jatim
       - DB_USER=root
-      - DB_PASS=root
-      - APP_URL=http://localhost:8080
-    depends_on:
-      - db
-    networks:
-      - sihafiz_network
-
-  # Database Service (MySQL 8.0)
-  db:
-    image: mysql:8.0
-    container_name: sihafiz_db
-    restart: always
-    environment:
-      MYSQL_DATABASE: sihafiz_jatim
-      MYSQL_ROOT_PASSWORD: root
-    ports:
-      - "3307:3306" # Port 3307 in host to avoid conflict with Laragon (3306)
-    volumes:
-      - db_data:/var/lib/mysql
-      - ./config/schema.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - sihafiz_network
-
-  # PhpMyAdmin Service (Optional - Included just in case)
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: sihafiz_pma
-    environment:
-      PMA_HOST: db
-      MYSQL_ROOT_PASSWORD: root
-    ports:
-      - "8081:80"
-    depends_on:
-      - db
+      - DB_PASS=
+      - APP_URL=http://localhost:8082
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - sihafiz_network
 
@@ -54,5 +26,3 @@ networks:
   sihafiz_network:
     driver: bridge
 
-volumes:
-  db_data:

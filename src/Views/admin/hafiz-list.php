@@ -60,7 +60,7 @@
                         <th>NIK</th>
                         <th>Nama</th>
                         <th>Kab/Kota</th>
-                        <th>Hafalan</th>
+                        <th>Lembaga Sertifikat</th>
                         <th class="text-center">Status</th>
                         <th width="150" class="text-center">Aksi</th>
                     </tr>
