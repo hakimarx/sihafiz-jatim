@@ -9,3 +9,10 @@ Thumbs.db
 *.swo
 .idea/
 .vscode/
+
+# Data files (large)
+*.csv
+*.xlsm
+*.xlsx
+*.zip
+deploy.log
