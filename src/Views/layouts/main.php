@@ -166,16 +166,16 @@
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link <?= strpos($currentUri, '/admin/laporan') !== false ? 'active' : '' ?>" href="<?= APP_URL ?>/admin/laporan">
-                                        <i class="bi bi-file-earmark-check"></i> Verifikasi Laporan
+                                        <i class="bi bi-journal-text"></i> Laporan Harian Hafiz
                                     </a>
                                 </li>
-                                <?php 
-                                    $pendingKabkoId = null;
-                                    if ($role === ROLE_ADMIN_KABKO) {
-                                        $currentAdmin = User::findById(getCurrentUserId());
-                                        $pendingKabkoId = $currentAdmin['kabupaten_kota_id'] ?? null;
-                                    }
-                                    $pendingCount = User::countPendingApproval($pendingKabkoId);
+                                <?php
+                                $pendingKabkoId = null;
+                                if ($role === ROLE_ADMIN_KABKO) {
+                                    $currentAdmin = User::findById(getCurrentUserId());
+                                    $pendingKabkoId = $currentAdmin['kabupaten_kota_id'] ?? null;
+                                }
+                                $pendingCount = User::countPendingApproval($pendingKabkoId);
                                 ?>
                                 <li class="nav-item">
                                     <a class="nav-link <?= strpos($currentUri, '/admin/pending') !== false ? 'active' : '' ?>" href="<?= APP_URL ?>/admin/pending">

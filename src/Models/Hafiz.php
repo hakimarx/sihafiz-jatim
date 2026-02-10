@@ -334,4 +334,95 @@ class Hafiz
             );
         }
     }
+
+    /**
+     * Get statistics by gender per kabupaten/kota
+     */
+    public static function getStatsByGender(?int $kabkoId = null): array
+    {
+        $where = "h.is_aktif = 1";
+        $params = [];
+
+        if ($kabkoId) {
+            $where .= " AND h.kabupaten_kota_id = :kabko_id";
+            $params['kabko_id'] = $kabkoId;
+        }
+
+        return Database::query(
+            "SELECT 
+                k.id, k.nama,
+                SUM(CASE WHEN h.jenis_kelamin = 'L' THEN 1 ELSE 0 END) as laki_laki,
+                SUM(CASE WHEN h.jenis_kelamin = 'P' THEN 1 ELSE 0 END) as perempuan,
+                COUNT(h.id) as total
+             FROM kabupaten_kota k
+             LEFT JOIN hafiz h ON k.id = h.kabupaten_kota_id AND {$where}
+             GROUP BY k.id
+             ORDER BY k.nama",
+            $params
+        );
+    }
+
+    /**
+     * Get statistics by graduation year
+     */
+    public static function getStatsByTahunKelulusan(?int $kabkoId = null): array
+    {
+        $where = "h.is_aktif = 1 AND h.status_kelulusan = 'lulus'";
+        $params = [];
+
+        if ($kabkoId) {
+            $where .= " AND h.kabupaten_kota_id = :kabko_id";
+            $params['kabko_id'] = $kabkoId;
+        }
+
+        return Database::query(
+            "SELECT 
+                h.tahun_tes as tahun,
+                COUNT(h.id) as total_lulus,
+                SUM(CASE WHEN h.jenis_kelamin = 'L' THEN 1 ELSE 0 END) as laki_laki,
+                SUM(CASE WHEN h.jenis_kelamin = 'P' THEN 1 ELSE 0 END) as perempuan
+             FROM hafiz h
+             WHERE {$where}
+             GROUP BY h.tahun_tes
+             ORDER BY h.tahun_tes DESC",
+            $params
+        );
+    }
+
+    /**
+     * Count hafiz who have submitted laporan harian
+     */
+    public static function getStatsLaporan(?int $kabkoId = null): array
+    {
+        $where = "h.is_aktif = 1";
+        $params = [];
+
+        if ($kabkoId) {
+            $where .= " AND h.kabupaten_kota_id = :kabko_id";
+            $params['kabko_id'] = $kabkoId;
+        }
+
+        return Database::queryOne(
+            "SELECT 
+                COUNT(DISTINCT h.id) as total_hafiz,
+                COUNT(DISTINCT CASE WHEN lh.id IS NOT NULL THEN h.id END) as hafiz_sudah_laporan,
+                COUNT(DISTINCT CASE WHEN lh.id IS NULL THEN h.id END) as hafiz_belum_laporan,
+                COUNT(lh.id) as total_laporan,
+                SUM(CASE WHEN lh.status_verifikasi = 'pending' THEN 1 ELSE 0 END) as laporan_pending,
+                SUM(CASE WHEN lh.status_verifikasi = 'disetujui' THEN 1 ELSE 0 END) as laporan_disetujui,
+                SUM(CASE WHEN lh.status_verifikasi = 'ditolak' THEN 1 ELSE 0 END) as laporan_ditolak
+             FROM hafiz h
+             LEFT JOIN laporan_harian lh ON h.id = lh.hafiz_id
+             WHERE {$where}",
+            $params
+        ) ?? [
+            'total_hafiz' => 0,
+            'hafiz_sudah_laporan' => 0,
+            'hafiz_belum_laporan' => 0,
+            'total_laporan' => 0,
+            'laporan_pending' => 0,
+            'laporan_disetujui' => 0,
+            'laporan_ditolak' => 0,
+        ];
+    }
 }

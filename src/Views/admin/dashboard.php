@@ -1,15 +1,15 @@
 <div class="page-header">
-    <h4 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h4>
+    <h4 class="mb-0"><i class="bi bi-bar-chart-line me-2"></i>Dashboard Statistik</h4>
 </div>
 
 <!-- Summary Cards -->
 <div class="row mb-4">
-    <div class="col-md-4 mb-3">
+    <div class="col-md-3 mb-3">
         <div class="card stat-card success">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="text-muted mb-1">Total Pendaftar</h6>
+                        <h6 class="text-muted mb-1">Total Huffadz</h6>
                         <h3 class="mb-0 text-success"><?= number_format($totalPendaftar) ?></h3>
                     </div>
                     <div class="bg-success bg-opacity-10 rounded-circle p-3">
@@ -19,7 +19,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
+    <div class="col-md-3 mb-3">
         <div class="card stat-card" style="border-left-color: #0d6efd;">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
@@ -34,13 +34,78 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
-        <div class="card stat-card pending">
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card" style="border-left-color: #6f42c1;">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="text-muted mb-1">Menunggu Seleksi</h6>
-                        <h3 class="mb-0 text-warning"><?= number_format($totalPending) ?></h3>
+                        <h6 class="text-muted mb-1">Laki-laki</h6>
+                        <h3 class="mb-0" style="color: #6f42c1;"><?= number_format($totalLakiLaki) ?></h3>
+                    </div>
+                    <div class="rounded-circle p-3" style="background: rgba(111,66,193,0.1);">
+                        <i class="bi bi-gender-male fs-4" style="color: #6f42c1;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card" style="border-left-color: #e91e8c;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Perempuan</h6>
+                        <h3 class="mb-0" style="color: #e91e8c;"><?= number_format($totalPerempuan) ?></h3>
+                    </div>
+                    <div class="rounded-circle p-3" style="background: rgba(233,30,140,0.1);">
+                        <i class="bi bi-gender-female fs-4" style="color: #e91e8c;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Laporan Harian Summary -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card" style="border-left-color: #20c997;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Sudah Laporan</h6>
+                        <h3 class="mb-0" style="color: #20c997;"><?= number_format($statsLaporan['hafiz_sudah_laporan'] ?? 0) ?></h3>
+                        <small class="text-muted">dari <?= number_format($statsLaporan['total_hafiz'] ?? 0) ?> hafiz</small>
+                    </div>
+                    <div class="rounded-circle p-3" style="background: rgba(32,201,151,0.1);">
+                        <i class="bi bi-journal-check fs-4" style="color: #20c997;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card" style="border-left-color: #fd7e14;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Belum Laporan</h6>
+                        <h3 class="mb-0" style="color: #fd7e14;"><?= number_format($statsLaporan['hafiz_belum_laporan'] ?? 0) ?></h3>
+                    </div>
+                    <div class="rounded-circle p-3" style="background: rgba(253,126,20,0.1);">
+                        <i class="bi bi-journal-x fs-4" style="color: #fd7e14;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card" style="border-left-color: #ffc107;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Laporan Pending</h6>
+                        <h3 class="mb-0 text-warning"><?= number_format($statsLaporan['laporan_pending'] ?? 0) ?></h3>
                     </div>
                     <div class="bg-warning bg-opacity-10 rounded-circle p-3">
                         <i class="bi bi-hourglass-split text-warning fs-4"></i>
@@ -49,24 +114,44 @@
             </div>
         </div>
     </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card" style="border-left-color: #198754;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Laporan Disetujui</h6>
+                        <h3 class="mb-0 text-success"><?= number_format($statsLaporan['laporan_disetujui'] ?? 0) ?></h3>
+                    </div>
+                    <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                        <i class="bi bi-check2-all text-success fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- Stats by Kabupaten/Kota -->
-<div class="card">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+<?php if (isset($pendingApproval) && $pendingApproval > 0): ?>
+    <div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
+        <i class="bi bi-bell-fill me-2 fs-5"></i>
+        <div>
+            <strong><?= $pendingApproval ?> Pendaftaran Baru</strong> menunggu persetujuan.
+            <a href="<?= APP_URL ?>/admin/pending" class="alert-link ms-2">Lihat &raquo;</a>
+        </div>
+    </div>
+<?php endif; ?>
+
+<!-- Rekap per Kabupaten/Kota -->
+<div class="card mb-4">
+    <div class="card-header bg-white py-3">
         <h5 class="mb-0">
-            <i class="bi bi-bar-chart me-2"></i>
+            <i class="bi bi-geo-alt me-2"></i>
             <?php if (hasRole(ROLE_ADMIN_KABKO) && !empty($stats) && count($stats) === 1): ?>
-                Rekap <?= htmlspecialchars($stats[0]['nama'] ?? '') ?> - Tahun <?= TAHUN_ANGGARAN ?>
+                Rekap <?= htmlspecialchars($stats[0]['nama'] ?? '') ?>
             <?php else: ?>
-                Rekap per Kabupaten/Kota - Tahun <?= TAHUN_ANGGARAN ?>
+                Rekap Huffadz per Kabupaten/Kota
             <?php endif; ?>
         </h5>
-        <?php if (isset($pendingApproval) && $pendingApproval > 0): ?>
-            <a href="<?= APP_URL ?>/admin/pending" class="badge bg-danger text-decoration-none">
-                <i class="bi bi-bell-fill me-1"></i> <?= $pendingApproval ?> Pendaftaran Baru Menunggu Persetujuan
-            </a>
-        <?php endif; ?>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -75,7 +160,9 @@
                     <tr>
                         <th>No</th>
                         <th>Kabupaten/Kota</th>
-                        <th class="text-center">Total Pendaftar</th>
+                        <th class="text-center">Total</th>
+                        <th class="text-center">Laki-laki</th>
+                        <th class="text-center">Perempuan</th>
                         <th class="text-center">Lulus</th>
                         <th class="text-center">Pending</th>
                         <th class="text-center">Aksi</th>
@@ -83,6 +170,16 @@
                 </thead>
                 <tbody>
                     <?php foreach ($stats as $i => $stat): ?>
+                        <?php
+                        // Find gender stats for this kabko
+                        $genderRow = null;
+                        foreach ($statsByGender as $gs) {
+                            if ($gs['id'] == $stat['id']) {
+                                $genderRow = $gs;
+                                break;
+                            }
+                        }
+                        ?>
                         <tr>
                             <td><?= $i + 1 ?></td>
                             <td>
@@ -90,6 +187,12 @@
                                 <br><small class="text-muted"><?= htmlspecialchars($stat['kode']) ?></small>
                             </td>
                             <td class="text-center"><?= number_format($stat['total_pendaftar'] ?? 0) ?></td>
+                            <td class="text-center">
+                                <span class="text-primary"><?= number_format($genderRow['laki_laki'] ?? 0) ?></span>
+                            </td>
+                            <td class="text-center">
+                                <span style="color: #e91e8c;"><?= number_format($genderRow['perempuan'] ?? 0) ?></span>
+                            </td>
                             <td class="text-center">
                                 <span class="badge bg-success"><?= number_format($stat['total_lulus'] ?? 0) ?></span>
                             </td>
@@ -108,6 +211,8 @@
                     <tr class="fw-bold">
                         <td colspan="2">TOTAL</td>
                         <td class="text-center"><?= number_format($totalPendaftar) ?></td>
+                        <td class="text-center text-primary"><?= number_format($totalLakiLaki) ?></td>
+                        <td class="text-center" style="color: #e91e8c;"><?= number_format($totalPerempuan) ?></td>
                         <td class="text-center"><?= number_format($totalLulus) ?></td>
                         <td class="text-center"><?= number_format($totalPending) ?></td>
                         <td></td>
@@ -117,3 +222,48 @@
         </div>
     </div>
 </div>
+
+<!-- Statistik per Tahun Kelulusan -->
+<?php if (!empty($statsByTahun)): ?>
+    <div class="card mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">
+                <i class="bi bi-calendar-check me-2"></i>Statistik per Tahun Kelulusan
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Tahun</th>
+                            <th class="text-center">Total Lulus</th>
+                            <th class="text-center">Laki-laki</th>
+                            <th class="text-center">Perempuan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($statsByTahun as $row): ?>
+                            <tr>
+                                <td><strong><?= $row['tahun'] ?></strong></td>
+                                <td class="text-center">
+                                    <span class="badge bg-success fs-6"><?= number_format($row['total_lulus']) ?></span>
+                                </td>
+                                <td class="text-center text-primary"><?= number_format($row['laki_laki']) ?></td>
+                                <td class="text-center" style="color: #e91e8c;"><?= number_format($row['perempuan']) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr class="fw-bold">
+                            <td>TOTAL</td>
+                            <td class="text-center"><?= number_format(array_sum(array_column($statsByTahun, 'total_lulus'))) ?></td>
+                            <td class="text-center text-primary"><?= number_format(array_sum(array_column($statsByTahun, 'laki_laki'))) ?></td>
+                            <td class="text-center" style="color: #e91e8c;"><?= number_format(array_sum(array_column($statsByTahun, 'perempuan'))) ?></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>

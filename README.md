@@ -144,7 +144,7 @@ Setelah instalasi, gunakan kredensial berikut:
 - `users` - Data user login (admin, penguji, hafiz)
 - `hafiz` - Data lengkap calon penerima insentif
 - `seleksi` - Nilai tes seleksi
-- `laporan_harian` - SPJ kegiatan hafiz
+- `laporan_harian` - SPJ kegiatan hafiz sebe
 - `kabupaten_kota` - Master wilayah
 - `periode_tes` - Periode tahun anggaran
 

@@ -1,5 +1,5 @@
 <div class="page-header d-flex justify-content-between align-items-center">
-    <h4 class="mb-0"><i class="bi bi-file-earmark-check me-2"></i>Verifikasi Laporan Harian</h4>
+    <h4 class="mb-0"><i class="bi bi-journal-text me-2"></i>Laporan Harian Hafiz</h4>
     <a href="<?= APP_URL ?>/admin/laporan/export?status=disetujui&format=excel" class="btn btn-success">
         <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
     </a>
@@ -9,30 +9,60 @@
 <div class="card mb-4">
     <div class="card-body">
         <form action="" method="GET" class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label">Status</label>
-                <select class="form-select" name="status">
-                    <option value="pending" <?= ($filters['status_verifikasi'] ?? '') === 'pending' ? 'selected' : '' ?>>Pending</option>
-                    <option value="disetujui" <?= ($filters['status_verifikasi'] ?? '') === 'disetujui' ? 'selected' : '' ?>>Disetujui</option>
-                    <option value="ditolak" <?= ($filters['status_verifikasi'] ?? '') === 'ditolak' ? 'selected' : '' ?>>Ditolak</option>
-                    <option value="" <?= ($filters['status_verifikasi'] ?? '') === '' ? 'selected' : '' ?>>Semua</option>
+            <?php if (!hasRole(ROLE_ADMIN_KABKO)): ?>
+                <div class="col-md-3">
+                    <label class="form-label">Kabupaten/Kota</label>
+                    <select class="form-select" name="kabupaten_kota_id">
+                        <option value="">-- Semua Kab/Ko --</option>
+                        <?php foreach ($kabkoList as $id => $nama): ?>
+                            <option value="<?= $id ?>" <?= ($filterKabkoId ?? '') == $id ? 'selected' : '' ?>><?= htmlspecialchars($nama) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            <?php endif; ?>
+            <div class="col-md-2">
+                <label class="form-label">Bulan</label>
+                <select class="form-select" name="bulan">
+                    <option value="">-- Semua --</option>
+                    <?php
+                    $namaBulan = ['01' => 'Januari', '02' => 'Februari', '03' => 'Maret', '04' => 'April', '05' => 'Mei', '06' => 'Juni', '07' => 'Juli', '08' => 'Agustus', '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember'];
+                    foreach ($namaBulan as $kode => $label): ?>
+                        <option value="<?= $kode ?>" <?= ($filterBulan ?? '') === $kode ? 'selected' : '' ?>><?= $label ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Dari Tanggal</label>
-                <input type="date" class="form-control" name="tanggal_dari"
-                    value="<?= htmlspecialchars($filters['tanggal_dari'] ?? '') ?>">
+            <div class="col-md-2">
+                <label class="form-label">Tahun</label>
+                <select class="form-select" name="tahun">
+                    <option value="">-- Semua --</option>
+                    <?php for ($y = date('Y'); $y >= 2020; $y--): ?>
+                        <option value="<?= $y ?>" <?= ($filterTahun ?? '') == $y ? 'selected' : '' ?>><?= $y ?></option>
+                    <?php endfor; ?>
+                </select>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Sampai Tanggal</label>
-                <input type="date" class="form-control" name="tanggal_sampai"
-                    value="<?= htmlspecialchars($filters['tanggal_sampai'] ?? '') ?>">
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select class="form-select" name="status">
+                    <option value="" <?= ($filterStatus ?? '') === '' ? 'selected' : '' ?>>Semua</option>
+                    <option value="pending" <?= ($filterStatus ?? '') === 'pending' ? 'selected' : '' ?>>Pending</option>
+                    <option value="disetujui" <?= ($filterStatus ?? '') === 'disetujui' ? 'selected' : '' ?>>Disetujui</option>
+                    <option value="ditolak" <?= ($filterStatus ?? '') === 'ditolak' ? 'selected' : '' ?>>Ditolak</option>
+                </select>
             </div>
             <div class="col-md-3 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary me-2"><i class="bi bi-search"></i> Filter</button>
-                <a href="<?= APP_URL ?>/admin/laporan" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
+                <a href="<?= APP_URL ?>/admin/laporan" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i> Reset</a>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Summary Badges -->
+<div class="row mb-3">
+    <div class="col-auto">
+        <span class="badge bg-secondary fs-6 px-3 py-2">
+            <i class="bi bi-list-ul me-1"></i>Total: <?= number_format($pagination['total'] ?? 0) ?> laporan
+        </span>
     </div>
 </div>
 
@@ -49,8 +79,10 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
+                            <th>No</th>
                             <th>Tanggal</th>
                             <th>Hafiz</th>
+                            <th>Kab/Ko</th>
                             <th>Kegiatan</th>
                             <th>Deskripsi</th>
                             <th class="text-center">Status</th>
@@ -58,14 +90,17 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($laporanList as $laporan): ?>
+                        <?php foreach ($laporanList as $i => $laporan): ?>
                             <tr>
+                                <td><?= ($pagination['page'] - 1) * $pagination['per_page'] + $i + 1 ?></td>
                                 <td>
                                     <strong><?= date('d M Y', strtotime($laporan['tanggal'])) ?></strong>
                                 </td>
                                 <td>
                                     <strong><?= htmlspecialchars($laporan['hafiz_nama']) ?></strong>
-                                    <br><small class="text-muted"><?= htmlspecialchars($laporan['kabupaten_kota_nama'] ?? '') ?></small>
+                                </td>
+                                <td>
+                                    <small class="text-muted"><?= htmlspecialchars($laporan['kabupaten_kota_nama'] ?? '-') ?></small>
                                 </td>
                                 <td>
                                     <span class="badge bg-primary"><?= ucfirst($laporan['jenis_kegiatan']) ?></span>
@@ -115,7 +150,12 @@
                 <ul class="pagination justify-content-center mb-0">
                     <?php for ($p = 1; $p <= $pagination['total_pages']; $p++): ?>
                         <li class="page-item <?= $p == $pagination['page'] ? 'active' : '' ?>">
-                            <a class="page-link" href="?page=<?= $p ?>&<?= http_build_query(array_filter($filters)) ?>">
+                            <a class="page-link" href="?page=<?= $p ?>&<?= http_build_query(array_filter([
+                                                                            'kabupaten_kota_id' => $filterKabkoId ?? '',
+                                                                            'bulan' => $filterBulan ?? '',
+                                                                            'tahun' => $filterTahun ?? '',
+                                                                            'status' => $filterStatus ?? '',
+                                                                        ])) ?>">
                                 <?= $p ?>
                             </a>
                         </li>

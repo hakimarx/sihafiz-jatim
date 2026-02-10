@@ -17,7 +17,7 @@ class AdminController extends Controller
     }
 
     /**
-     * Dashboard
+     * Dashboard - Statistik
      */
     public function dashboard(): void
     {
@@ -39,13 +39,26 @@ class AdminController extends Controller
         $totalLulus = array_sum(array_column($stats, 'total_lulus'));
         $totalPending = array_sum(array_column($stats, 'total_pending'));
 
+        // Statistik tambahan
+        $statsByGender = Hafiz::getStatsByGender($kabkoId);
+        $totalLakiLaki = array_sum(array_column($statsByGender, 'laki_laki'));
+        $totalPerempuan = array_sum(array_column($statsByGender, 'perempuan'));
+
+        $statsByTahun = Hafiz::getStatsByTahunKelulusan($kabkoId);
+        $statsLaporan = Hafiz::getStatsLaporan($kabkoId);
+
         $this->view('admin.dashboard', [
-            'title' => 'Dashboard Admin - ' . APP_NAME,
+            'title' => 'Dashboard Statistik - ' . APP_NAME,
             'stats' => $stats,
             'totalPendaftar' => $totalPendaftar,
             'totalLulus' => $totalLulus,
             'totalPending' => $totalPending,
             'pendingApproval' => $pendingApproval,
+            'statsByGender' => $statsByGender,
+            'totalLakiLaki' => $totalLakiLaki,
+            'totalPerempuan' => $totalPerempuan,
+            'statsByTahun' => $statsByTahun,
+            'statsLaporan' => $statsLaporan,
         ]);
     }
 
@@ -309,30 +322,55 @@ class AdminController extends Controller
     }
 
     /**
-     * List Laporan Harian (untuk verifikasi)
+     * List Laporan Harian Hafiz
      */
     public function laporanList(): void
     {
         $page = (int) ($this->input('page') ?: 1);
+
+        // Build filters from request
+        $bulan = $this->input('bulan');
+        $tahun = $this->input('tahun');
+
+        // Compute tanggal_dari & tanggal_sampai from bulan/tahun
+        $tanggalDari = $this->input('tanggal_dari');
+        $tanggalSampai = $this->input('tanggal_sampai');
+
+        if ($bulan && $tahun) {
+            $tanggalDari = "{$tahun}-{$bulan}-01";
+            $tanggalSampai = date('Y-m-t', strtotime($tanggalDari));
+        } elseif ($tahun && !$bulan) {
+            $tanggalDari = "{$tahun}-01-01";
+            $tanggalSampai = "{$tahun}-12-31";
+        }
+
         $filters = [
-            'status_verifikasi' => $this->input('status') ?: 'pending',
-            'tanggal_dari' => $this->input('tanggal_dari'),
-            'tanggal_sampai' => $this->input('tanggal_sampai'),
+            'status_verifikasi' => $this->input('status'),
+            'tanggal_dari' => $tanggalDari,
+            'tanggal_sampai' => $tanggalSampai,
         ];
 
-        // Jika admin kabko, filter by kabupaten_kota_id
+        // Filter kabupaten_kota_id
         if (hasRole(ROLE_ADMIN_KABKO)) {
             $user = User::findById(getCurrentUserId());
             $filters['kabupaten_kota_id'] = $user['kabupaten_kota_id'];
+        } elseif ($this->input('kabupaten_kota_id')) {
+            $filters['kabupaten_kota_id'] = $this->input('kabupaten_kota_id');
         }
 
         $result = LaporanHarian::getAll($filters, $page);
+        $kabkoList = KabupatenKota::getForDropdown();
 
         $this->view('admin.laporan-list', [
-            'title' => 'Verifikasi Laporan - ' . APP_NAME,
+            'title' => 'Laporan Harian Hafiz - ' . APP_NAME,
             'laporanList' => $result['data'],
             'pagination' => $result,
             'filters' => $filters,
+            'kabkoList' => $kabkoList,
+            'filterBulan' => $bulan,
+            'filterTahun' => $tahun,
+            'filterKabkoId' => $this->input('kabupaten_kota_id'),
+            'filterStatus' => $this->input('status'),
         ]);
     }
 
