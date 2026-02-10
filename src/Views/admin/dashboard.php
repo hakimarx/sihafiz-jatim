@@ -62,10 +62,10 @@
                 Rekap per Kabupaten/Kota - Tahun <?= TAHUN_ANGGARAN ?>
             <?php endif; ?>
         </h5>
-        <?php if (hasRole(ROLE_ADMIN_KABKO) && isset($pendingApproval) && $pendingApproval > 0): ?>
-            <span class="badge bg-danger">
-                <i class="bi bi-bell-fill me-1"></i> <?= $pendingApproval ?> Hafiz Baru Menunggu Approval
-            </span>
+        <?php if (isset($pendingApproval) && $pendingApproval > 0): ?>
+            <a href="<?= APP_URL ?>/admin/pending" class="badge bg-danger text-decoration-none">
+                <i class="bi bi-bell-fill me-1"></i> <?= $pendingApproval ?> Pendaftaran Baru Menunggu Persetujuan
+            </a>
         <?php endif; ?>
     </div>
     <div class="card-body p-0">

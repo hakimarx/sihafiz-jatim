@@ -169,6 +169,22 @@
                                         <i class="bi bi-file-earmark-check"></i> Verifikasi Laporan
                                     </a>
                                 </li>
+                                <?php 
+                                    $pendingKabkoId = null;
+                                    if ($role === ROLE_ADMIN_KABKO) {
+                                        $currentAdmin = User::findById(getCurrentUserId());
+                                        $pendingKabkoId = $currentAdmin['kabupaten_kota_id'] ?? null;
+                                    }
+                                    $pendingCount = User::countPendingApproval($pendingKabkoId);
+                                ?>
+                                <li class="nav-item">
+                                    <a class="nav-link <?= strpos($currentUri, '/admin/pending') !== false ? 'active' : '' ?>" href="<?= APP_URL ?>/admin/pending">
+                                        <i class="bi bi-person-check"></i> Persetujuan Daftar
+                                        <?php if ($pendingCount > 0): ?>
+                                            <span class="badge bg-danger rounded-pill ms-1"><?= $pendingCount ?></span>
+                                        <?php endif; ?>
+                                    </a>
+                                </li>
                             <?php endif; ?>
 
                             <?php if ($role === ROLE_ADMIN_PROV || $role === ROLE_ADMIN_KABKO || $role === ROLE_PENGUJI): ?>

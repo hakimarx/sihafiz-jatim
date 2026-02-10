@@ -66,6 +66,17 @@ class AuthController extends Controller
         $user = User::authenticate($username, $password);
 
         if ($user) {
+            // Check if this is a pending account
+            if (isset($user['pending']) && $user['pending'] === true) {
+                setFlash('error', 
+                    '<strong>Akun Anda belum diaktifkan.</strong><br>' .
+                    'Akun atas nama <b>' . htmlspecialchars($user['nama'] ?? '') . '</b> sedang menunggu persetujuan admin kabupaten/kota.<br>' .
+                    '<small class="text-muted">Silakan hubungi admin kabupaten/kota Anda untuk informasi lebih lanjut.</small>'
+                );
+                $this->redirect(APP_URL . '/login');
+                return;
+            }
+
             // Get nama from hafiz if role is hafiz
             if ($user['role'] === ROLE_HAFIZ) {
                 $hafiz = Hafiz::findByUserId($user['id']);

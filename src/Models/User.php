@@ -20,6 +20,17 @@ class User
     }
 
     /**
+     * Find user by username (including inactive/pending)
+     */
+    public static function findByUsernameAll(string $username): ?array
+    {
+        return Database::queryOne(
+            "SELECT * FROM users WHERE username = :username",
+            ['username' => $username]
+        );
+    }
+
+    /**
      * Find user by ID
      */
     public static function findById(int $id): ?array
@@ -38,12 +49,19 @@ class User
      */
     public static function authenticate(string $username, string $password): ?array
     {
+        // First check active users
         $user = self::findByUsername($username);
 
         if ($user && verifyPassword($password, $user['password'])) {
             // Update last login
             self::updateLastLogin($user['id']);
             return $user;
+        }
+
+        // Check if this is a pending (inactive) account
+        $inactiveUser = self::findByUsernameAll($username);
+        if ($inactiveUser && !$inactiveUser['is_active'] && verifyPassword($password, $inactiveUser['password'])) {
+            return ['pending' => true, 'nama' => $inactiveUser['nama']];
         }
 
         return null;
@@ -66,8 +84,8 @@ class User
     public static function create(array $data): int
     {
         Database::execute(
-            "INSERT INTO users (username, password, role, kabupaten_kota_id, nama, email, telepon) 
-             VALUES (:username, :password, :role, :kabupaten_kota_id, :nama, :email, :telepon)",
+            "INSERT INTO users (username, password, role, kabupaten_kota_id, nama, email, telepon, is_active) 
+             VALUES (:username, :password, :role, :kabupaten_kota_id, :nama, :email, :telepon, :is_active)",
             [
                 'username' => $data['username'],
                 'password' => hashPassword($data['password']),
@@ -76,6 +94,7 @@ class User
                 'nama' => $data['nama'] ?? null,
                 'email' => $data['email'] ?? null,
                 'telepon' => $data['telepon'] ?? null,
+                'is_active' => $data['is_active'] ?? 1,
             ]
         );
 
@@ -244,5 +263,45 @@ class User
 
         $result = Database::queryOne($sql, $params);
         return $result['count'] > 0;
+    }
+
+    /**
+     * Get pending approval users (is_active = 0) with optional kabko filter
+     */
+    public static function getPendingApproval(?int $kabkoId = null): array
+    {
+        $sql = "SELECT u.*, k.nama as kabupaten_kota_nama,
+                       h.nama as hafiz_nama, h.nik as hafiz_nik, h.telepon as hafiz_telepon
+                FROM users u 
+                LEFT JOIN kabupaten_kota k ON u.kabupaten_kota_id = k.id
+                LEFT JOIN hafiz h ON h.user_id = u.id
+                WHERE u.is_active = 0 AND u.role = 'hafiz'";
+        $params = [];
+
+        if ($kabkoId) {
+            $sql .= " AND u.kabupaten_kota_id = :kabko_id";
+            $params['kabko_id'] = $kabkoId;
+        }
+
+        $sql .= " ORDER BY u.created_at DESC";
+
+        return Database::query($sql, $params);
+    }
+
+    /**
+     * Count pending approval users
+     */
+    public static function countPendingApproval(?int $kabkoId = null): int
+    {
+        $sql = "SELECT COUNT(*) as count FROM users WHERE is_active = 0 AND role = 'hafiz'";
+        $params = [];
+
+        if ($kabkoId) {
+            $sql .= " AND kabupaten_kota_id = :kabko_id";
+            $params['kabko_id'] = $kabkoId;
+        }
+
+        $result = Database::queryOne($sql, $params);
+        return (int) ($result['count'] ?? 0);
     }
 }

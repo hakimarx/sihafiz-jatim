@@ -89,9 +89,10 @@ $router->get('/logout', [AuthController::class, 'logout']);
 $router->get('/profile', [ProfileController::class, 'index']);
 $router->post('/profile/update', [ProfileController::class, 'update']);
 
-// Registration Routes
+// Registration Routes (Klaim NIK - 3 Steps)
 $router->get('/register', [RegistrationController::class, 'index']);
-$router->post('/register', [RegistrationController::class, 'store']);
+$router->post('/register/check-nik', [RegistrationController::class, 'checkNik']);
+$router->post('/register/verify', [RegistrationController::class, 'verify']);
 
 // Admin Routes
 $router->get('/admin/dashboard', [AdminController::class, 'dashboard']);
@@ -116,6 +117,11 @@ $router->post('/admin/users/{id}/delete', [AdminController::class, 'userDelete']
 $router->get('/admin/settings', [AdminController::class, 'settings']);
 $router->post('/admin/settings', [AdminController::class, 'settingsUpdate']);
 $router->post('/admin/import', [AdminController::class, 'importProcess']);
+
+// Admin Pending Approval (Registrasi Klaim NIK)
+$router->get('/admin/pending', [AdminController::class, 'pendingApproval']);
+$router->post('/admin/pending/{id}/approve', [AdminController::class, 'approveUser']);
+$router->post('/admin/pending/{id}/reject', [AdminController::class, 'rejectUser']);
 
 // Hafiz Routes
 $router->get('/hafiz/dashboard', [HafizController::class, 'dashboard']);

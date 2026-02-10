@@ -27,10 +27,10 @@ class AdminController extends Controller
         if (hasRole(ROLE_ADMIN_KABKO)) {
             $user = User::findById(getCurrentUserId());
             $kabkoId = $user['kabupaten_kota_id'];
-
-            // Count pending hafiz for approval (status_kelulusan = 'pending' and recently registered)
-            $pendingApproval = Hafiz::countPendingByKabko($kabkoId);
         }
+
+        // Count pending user registrations (is_active = 0)
+        $pendingApproval = User::countPendingApproval($kabkoId);
 
         $stats = Hafiz::getStatsByKabko(null, $kabkoId);
 
@@ -743,5 +743,118 @@ class AdminController extends Controller
         }
 
         return null;
+    }
+
+    // ============================================
+    // PENDAFTARAN / APPROVAL
+    // ============================================
+
+    /**
+     * List pending approval registrations
+     */
+    public function pendingApproval(): void
+    {
+        $kabkoId = null;
+        if (hasRole(ROLE_ADMIN_KABKO)) {
+            $user = User::findById(getCurrentUserId());
+            $kabkoId = $user['kabupaten_kota_id'];
+        }
+
+        $pendingUsers = User::getPendingApproval($kabkoId);
+
+        $this->view('admin.pending-approval', [
+            'title' => 'Persetujuan Pendaftaran - ' . APP_NAME,
+            'pendingUsers' => $pendingUsers,
+        ]);
+    }
+
+    /**
+     * Approve a pending user registration
+     */
+    public function approveUser(string $id): void
+    {
+        if (!$this->isPost() || !$this->validateCsrf()) {
+            setFlash('error', 'Request tidak valid.');
+            $this->redirect(APP_URL . '/admin/pending');
+            return;
+        }
+
+        $userId = (int) $id;
+        $user = User::findById($userId);
+
+        if (!$user) {
+            setFlash('error', 'User tidak ditemukan.');
+            $this->redirect(APP_URL . '/admin/pending');
+            return;
+        }
+
+        // Check authorization: admin kabko can only approve users in their kabko
+        if (hasRole(ROLE_ADMIN_KABKO)) {
+            $admin = User::findById(getCurrentUserId());
+            if ($user['kabupaten_kota_id'] != $admin['kabupaten_kota_id']) {
+                setFlash('error', 'Anda tidak berwenang mengaktifkan user dari kabupaten/kota lain.');
+                $this->redirect(APP_URL . '/admin/pending');
+                return;
+            }
+        }
+
+        try {
+            User::update($userId, ['is_active' => 1]);
+            setFlash('success', 'Akun <strong>' . htmlspecialchars($user['nama'] ?? $user['username']) . '</strong> berhasil diaktifkan. Hafiz sekarang dapat login.');
+        } catch (Exception $e) {
+            error_log("Error approving user: " . $e->getMessage());
+            setFlash('error', 'Gagal mengaktifkan akun.');
+        }
+
+        $this->redirect(APP_URL . '/admin/pending');
+    }
+
+    /**
+     * Reject a pending user registration
+     */
+    public function rejectUser(string $id): void
+    {
+        if (!$this->isPost() || !$this->validateCsrf()) {
+            setFlash('error', 'Request tidak valid.');
+            $this->redirect(APP_URL . '/admin/pending');
+            return;
+        }
+
+        $userId = (int) $id;
+        $user = User::findById($userId);
+
+        if (!$user) {
+            setFlash('error', 'User tidak ditemukan.');
+            $this->redirect(APP_URL . '/admin/pending');
+            return;
+        }
+
+        // Check authorization
+        if (hasRole(ROLE_ADMIN_KABKO)) {
+            $admin = User::findById(getCurrentUserId());
+            if ($user['kabupaten_kota_id'] != $admin['kabupaten_kota_id']) {
+                setFlash('error', 'Anda tidak berwenang menolak user dari kabupaten/kota lain.');
+                $this->redirect(APP_URL . '/admin/pending');
+                return;
+            }
+        }
+
+        try {
+            // Unlink hafiz from this user
+            Database::execute(
+                "UPDATE hafiz SET user_id = NULL WHERE user_id = :user_id",
+                ['user_id' => $userId]
+            );
+
+            // Delete user account
+            User::delete($userId);
+
+            setFlash('success', 'Pendaftaran <strong>' . htmlspecialchars($user['nama'] ?? $user['username']) . '</strong> telah ditolak dan akun dihapus.');
+        } catch (Exception $e) {
+            error_log("Error rejecting user: " . $e->getMessage());
+            setFlash('error', 'Gagal menolak pendaftaran.');
+        }
+
+        $this->redirect(APP_URL . '/admin/pending');
     }
 }
