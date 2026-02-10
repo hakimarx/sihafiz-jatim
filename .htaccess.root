@@ -9,7 +9,7 @@
 
     # 1. SECURITY: Block access to implementation folders & sensitive files
     # Mencegah akses langsung ke folder kode sumber, config, dan file sistem
-    RewriteRule ^(src|config|vendor|bin|logs|tests|docs|Dockerfile|compose\.yaml|\.env|\.git|\.gitignore|README\.md|LICENSE) - [F,L,NC]
+    RewriteRule ^(src|config|vendor|bin|logs|tests|docs|Dockerfile|compose\.yaml|\.env|\.git|\.gitignore|README\.md|LICENSE|deploy\.log|import_hafiz|clean_and_export|Book1) - [F,L,NC]
     
     # 2. REDIRECT: Send everything to public folder
     # Mengarahkan pengunjung ke folder public (entry point aplikasi)
