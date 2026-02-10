@@ -18,6 +18,20 @@ Website terupdate otomatis! ✅
 
 ### Step 1: Setup Git di Server (cPanel)
 
+**OPSI A: Menggunakan Installer Otomatis (Rekomendasi)**
+Jalankan file installer yang sudah disediakan (tanpa perlu SSH/Terminal):
+
+1. Login ke cPanel → File Manager
+2. Upload file **`public/setup-deploy.php`** ke folder `public_html` di hosting
+3. Buka di browser: `https://hafizjatim.my.id/setup-deploy.php`
+4. Ikuti instruksi di layar (masukkan GitHub username & token)
+5. Script akan otomatis melakukan clone & setup git
+
+---
+
+**OPSI B: Manual via Terminal (SSH)**
+Jika ingin setup manual lewat terminal:
+
 Login ke cPanel → **Terminal** (atau SSH), lalu jalankan:
 
 ```bash
