@@ -218,7 +218,8 @@ while (($data = fgetcsv($handle, 2000, ";")) !== FALSE) {
 
     // Kabupaten ID - exact match pakai nama yang sudah dinormalisasi
     $asal_sql = "(SELECT id FROM kabupaten_kota WHERE nama = '$asal_escaped' LIMIT 1)";
-    $asal_sql_safe = "COALESCE($asal_sql, (SELECT id FROM kabupaten_kota LIMIT 1), 1)";
+    // Fallback ke ID 1 (Default) jika tidak ditemukan, menghindari subquery panjang yang rentan error
+    $asal_sql_safe = "COALESCE($asal_sql, 1)";
 
     // Tanggal Lahir
     $tgl_lahir_sql = "'2000-01-01'";

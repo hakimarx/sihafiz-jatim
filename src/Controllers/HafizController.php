@@ -343,10 +343,13 @@ class HafizController extends Controller
     public function profilEdit(): void
     {
         $kabkoList = KabupatenKota::getForDropdown();
+        $mengajarList = Hafiz::getMengajarList($this->hafiz['id']);
+
         $this->view('hafiz.profil-edit', [
             'title' => 'Edit Profil - ' . APP_NAME,
             'hafiz' => $this->hafiz,
-            'kabkoList' => $kabkoList
+            'kabkoList' => $kabkoList,
+            'mengajarList' => $mengajarList
         ]);
     }
 
@@ -389,7 +392,82 @@ class HafizController extends Controller
         }
 
         try {
-            Hafiz::update($this->hafiz['id'], $updateData);
+            $hafizId = $this->hafiz['id'];
+
+            if ($hafizId && $hafizId > 0) {
+                Hafiz::update($hafizId, $updateData);
+            } else {
+                // Create New Hafiz Record linked to current user
+                $updateData['user_id'] = getCurrentUserId();
+                $updateData['tahun_tes'] = TAHUN_ANGGARAN;
+
+                // Ensure required fields
+                if (empty($updateData['nik'])) $updateData['nik'] = $_SESSION['username'] ?? rand(100000, 999999); // Fallback
+                if (empty($updateData['kabupaten_kota_id'])) {
+                    // Try get from user
+                    $user = User::findById(getCurrentUserId());
+                    $updateData['kabupaten_kota_id'] = $user['kabupaten_kota_id'];
+                }
+
+                // Helper to create without recreating user
+                // Direct insert via Database class since Hafiz::create logic is for Admin
+                // But simplified, let's just use raw insert to be safe
+                Database::execute(
+                    "INSERT INTO hafiz (
+                        user_id, nik, nama, tempat_lahir, tanggal_lahir, jenis_kelamin,
+                        alamat, desa_kelurahan, kecamatan, kabupaten_kota_id,
+                        telepon, email, nama_bank, nomor_rekening, tahun_tes, is_aktif
+                    ) VALUES (
+                        :user_id, :nik, :nama, :tempat_lahir, :tanggal_lahir, :jenis_kelamin,
+                        :alamat, :desa_kelurahan, :kecamatan, :kabupaten_kota_id,
+                        :telepon, :email, :nama_bank, :nomor_rekening, :tahun_tes, 1
+                    )",
+                    [
+                        'user_id' => $updateData['user_id'],
+                        'nik' => $updateData['nik'],
+                        'nama' => $updateData['nama'],
+                        'tempat_lahir' => $updateData['tempat_lahir'] ?? null,
+                        'tanggal_lahir' => $updateData['tanggal_lahir'] ?? null,
+                        'jenis_kelamin' => $updateData['jenis_kelamin'] ?? 'L',
+                        'alamat' => $updateData['alamat'] ?? null,
+                        'desa_kelurahan' => $updateData['desa_kelurahan'] ?? null,
+                        'kecamatan' => $updateData['kecamatan'] ?? null,
+                        'kabupaten_kota_id' => $updateData['kabupaten_kota_id'] ?? 1, // Default to avoid crash
+                        'telepon' => $updateData['telepon'] ?? null,
+                        'email' => $updateData['email'] ?? null,
+                        'nama_bank' => $updateData['nama_bank'] ?? 'BANK JATIM',
+                        'nomor_rekening' => $updateData['nomor_rekening'] ?? null,
+                        'tahun_tes' => $updateData['tahun_tes'],
+                    ]
+                );
+
+                $hafizId = Database::lastInsertId();
+                if ($updateData['foto_profil'] ?? false) {
+                    Database::execute("UPDATE hafiz SET foto_profil = :fp WHERE id = :id", ['fp' => $updateData['foto_profil'], 'id' => $hafizId]);
+                }
+                if ($updateData['foto_ktp'] ?? false) {
+                    Database::execute("UPDATE hafiz SET foto_ktp = :fp WHERE id = :id", ['fp' => $updateData['foto_ktp'], 'id' => $hafizId]);
+                }
+            }
+
+            // Handle Additional Teaching Locations
+            $mengajarTempat = $this->input('mengajar_tempat'); // Array
+            $mengajarTmt = $this->input('mengajar_tmt'); // Array
+
+            $mengajarList = [];
+            if (is_array($mengajarTempat)) {
+                foreach ($mengajarTempat as $i => $tempat) {
+                    if (!empty($tempat) && !empty($mengajarTmt[$i])) {
+                        $mengajarList[] = [
+                            'tempat' => sanitize($tempat),
+                            'tmt' => sanitize($mengajarTmt[$i])
+                        ];
+                    }
+                }
+            }
+            Hafiz::updateMengajarList((int)$hafizId, $mengajarList);
+
+            // Sync Nama & Foto to session
 
             // Sync Nama & Foto to session
             if (!empty($updateData['nama'])) {

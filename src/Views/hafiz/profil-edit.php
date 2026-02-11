@@ -144,6 +144,53 @@
                         </div>
                     </div>
 
+                    <h6 class="border-bottom pb-2 mb-3 mt-4 fw-bold"><i class="bi bi-building me-2"></i>Riwayat Lokasi Mengajar</h6>
+                    <div class="alert alert-info small py-2">
+                        <i class="bi bi-info-circle me-1"></i> Tambahkan semua tempat Anda mengajar saat ini.
+                    </div>
+
+                    <div id="teaching-locations-container">
+                        <?php
+                        $list = $mengajarList ?? [];
+                        // Fallback ke kolom lama jika kosong (opsional, tapi bagus untuk migrasi data lama)
+                        if (empty($list) && !empty($hafiz['tempat_mengajar'])) {
+                            $list[] = [
+                                'tempat_mengajar' => $hafiz['tempat_mengajar'],
+                                'tmt_mengajar' => $hafiz['tmt_mengajar']
+                            ];
+                        }
+
+                        if (empty($list)): ?>
+                            <div class="row mb-2 location-row">
+                                <div class="col-md-7 mb-2">
+                                    <input type="text" class="form-control form-control-sm" name="mengajar_tempat[]" placeholder="Nama Lembaga / Masjid / TPQ" required>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <input type="date" class="form-control form-control-sm" name="mengajar_tmt[]" required>
+                                </div>
+                                <div class="col-md-1 mb-2">
+                                </div>
+                            </div>
+                            <?php else:
+                            foreach ($list as $idx => $m): ?>
+                                <div class="row mb-2 location-row" id="loc-row-<?= $idx ?>">
+                                    <div class="col-md-7 mb-2">
+                                        <input type="text" class="form-control form-control-sm" name="mengajar_tempat[]" value="<?= htmlspecialchars($m['tempat_mengajar'] ?? '') ?>" placeholder="Nama Lembaga / Masjid / TPQ" required>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <input type="date" class="form-control form-control-sm" name="mengajar_tmt[]" value="<?= htmlspecialchars($m['tmt_mengajar'] ?? '') ?>" required>
+                                    </div>
+                                    <div class="col-md-1 mb-2">
+                                        <?php if ($idx > 0): ?>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLocation('loc-row-<?= $idx ?>')"><i class="bi bi-trash"></i></button>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                        <?php endforeach;
+                        endif; ?>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addLocation()"><i class="bi bi-plus-circle"></i> Tambah Lokasi</button>
+
                     <div class="d-flex justify-content-between mt-4 pt-3 border-top">
                         <a href="<?= APP_URL ?>/hafiz/profil" class="btn btn-outline-secondary">Batal</a>
                         <button type="submit" class="btn btn-success px-4">
@@ -292,5 +339,31 @@
             status.className = 'badge bg-danger';
             status.textContent = 'Gagal OCR';
         }
+    }
+
+
+
+    function addLocation() {
+        const container = document.getElementById('teaching-locations-container');
+        const id = 'loc-row-' + Date.now();
+        const html = `
+            <div class="row mb-2 location-row" id="${id}">
+                <div class="col-md-7 mb-2">
+                    <input type="text" class="form-control form-control-sm" name="mengajar_tempat[]" placeholder="Nama Lembaga / Masjid / TPQ" required>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <input type="date" class="form-control form-control-sm" name="mengajar_tmt[]" required>
+                </div>
+                <div class="col-md-1 mb-2">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLocation('${id}')"><i class="bi bi-trash"></i></button>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+    }
+
+    function removeLocation(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
     }
 </script>
