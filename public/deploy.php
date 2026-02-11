@@ -19,6 +19,71 @@ if (($_GET['key'] ?? '') !== $deployKey) {
     die('❌ Access denied. Invalid deploy key.');
 }
 
+// ===== DIAGNOSTIC ACTIONS =====
+$action = $_GET['action'] ?? 'deploy';
+
+if ($action !== 'deploy') {
+    require_once __DIR__ . '/../config/app.php';
+    require_once __DIR__ . '/../config/database.php';
+    require_once __DIR__ . '/../config/security.php';
+    header('Content-Type: application/json');
+    
+    try {
+        $result = [];
+        
+        if ($action === 'status') {
+            $result['db_connected'] = true;
+            $users = Database::query("SELECT id, username, role, nama, is_active, last_login FROM users ORDER BY id ASC LIMIT 20");
+            $result['users'] = $users;
+            $hafiz_count = Database::queryOne("SELECT COUNT(*) as count FROM hafiz");
+            $result['hafiz_count'] = $hafiz_count['count'];
+            $pending = Database::queryOne("SELECT COUNT(*) as count FROM users WHERE is_active = 0 AND role = 'hafiz'");
+            $result['pending_count'] = $pending['count'];
+            
+            // Check register view version
+            $registerContent = @file_get_contents(__DIR__ . '/../src/Views/auth/register.php');
+            $result['register_version'] = (strpos($registerContent, 'Klaim Akun Hafiz') !== false) ? 'new (Klaim NIK)' : 'old (Pendaftaran Hafiz)';
+            
+            // File check
+            $result['files'] = [
+                'check_status_exists' => file_exists(__DIR__ . '/check_status.php'),
+                'index_exists' => file_exists(__DIR__ . '/index.php'),
+                'dir_listing' => scandir(__DIR__),
+            ];
+        }
+        
+        if ($action === 'verify-password') {
+            $user = Database::queryOne("SELECT id, username, password, role, is_active FROM users WHERE username = 'admin'");
+            if ($user) {
+                $result['user'] = $user;
+                $result['verify_admin123'] = password_verify('admin123', $user['password']);
+            } else {
+                $result['error'] = 'Admin user not found';
+            }
+        }
+        
+        if ($action === 'reset-admin') {
+            $newHash = password_hash('admin123', PASSWORD_BCRYPT, ['cost' => 12]);
+            Database::execute(
+                "UPDATE users SET password = :password, is_active = 1 WHERE username = 'admin'",
+                ['password' => $newHash]
+            );
+            $result['message'] = 'Admin password reset to admin123';
+        }
+        
+        if ($action === 'list-files') {
+            $result['public_dir'] = scandir(__DIR__);
+            $result['root_dir'] = scandir(__DIR__ . '/..');
+            $result['views_auth'] = scandir(__DIR__ . '/../src/Views/auth');
+        }
+        
+        echo json_encode($result, JSON_PRETTY_PRINT);
+    } catch (Exception $e) {
+        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT);
+    }
+    exit;
+}
+
 $repoDir = __DIR__ . '/..';
 $logFile = __DIR__ . '/../deploy.log';
 $branch = 'main';
