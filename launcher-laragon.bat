@@ -10,13 +10,13 @@ echo ==========================================
 echo.
 
 REM 1. Jalankan Laragon
-set "LARAGON_EXE=C:\laragon\laragon.exe"
+set "LARAGON_EXE=D:\laragon\laragon.exe"
 if exist "%LARAGON_EXE%" (
     echo [OK] Menjalankan Laragon...
     start "" "%LARAGON_EXE%"
 ) else (
-    echo [ERROR] Laragon tidak ditemukan di C:\laragon\laragon.exe
-    echo Pastikan Laragon sudah terinstall di C:
+    echo [ERROR] Laragon tidak ditemukan di D:\laragon\laragon.exe
+    echo Pastikan Laragon sudah terinstall di D:\laragon
     pause
     exit /b
 )
