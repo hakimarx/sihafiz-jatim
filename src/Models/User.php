@@ -8,15 +8,44 @@
 
 class User
 {
-    /**
-     * Find user by username (NIK/NoHP)
-     */
     public static function findByUsername(string $username): ?array
     {
         return Database::queryOne(
             "SELECT * FROM users WHERE username = :username AND is_active = 1",
             ['username' => $username]
         );
+    }
+
+    /**
+     * Find user by username or NIK (for login)
+     */
+    public static function findByUsernameOrNik(string $identity): ?array
+    {
+        // 1. Try username exactly (active users)
+        $user = Database::queryOne(
+            "SELECT * FROM users WHERE username = :identity AND is_active = 1",
+            ['identity' => $identity]
+        );
+        if ($user) return $user;
+
+        // 2. Try telepon column in users table
+        $user = Database::queryOne(
+            "SELECT * FROM users WHERE telepon = :identity AND is_active = 1",
+            ['identity' => $identity]
+        );
+        if ($user) return $user;
+
+        // 3. Try NIK in hafiz table
+        $hafiz = Database::queryOne(
+            "SELECT user_id FROM hafiz WHERE nik = :identity AND is_aktif = 1 LIMIT 1",
+            ['identity' => $identity]
+        );
+
+        if ($hafiz && $hafiz['user_id']) {
+            return self::findById($hafiz['user_id']);
+        }
+
+        return null;
     }
 
     /**
@@ -49,8 +78,8 @@ class User
      */
     public static function authenticate(string $username, string $password): ?array
     {
-        // First check active users
-        $user = self::findByUsername($username);
+        // First check active users (by username or NIK)
+        $user = self::findByUsernameOrNik($username);
 
         if ($user && verifyPassword($password, $user['password'])) {
             // Update last login
@@ -58,8 +87,15 @@ class User
             return $user;
         }
 
-        // Check if this is a pending (inactive) account
+        // Check if this is a pending (inactive) account (by username or NIK)
         $inactiveUser = self::findByUsernameAll($username);
+        if (!$inactiveUser) {
+             $hafiz = Database::queryOne("SELECT user_id FROM hafiz WHERE nik = :nik LIMIT 1", ['nik' => $username]);
+             if ($hafiz && $hafiz['user_id']) {
+                 $inactiveUser = Database::queryOne("SELECT * FROM users WHERE id = :id", ['id' => $hafiz['user_id']]);
+             }
+        }
+
         if ($inactiveUser && !$inactiveUser['is_active'] && verifyPassword($password, $inactiveUser['password'])) {
             return ['pending' => true, 'nama' => $inactiveUser['nama']];
         }

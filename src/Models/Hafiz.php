@@ -31,7 +31,8 @@ class Hafiz
             "SELECT h.*, k.nama as kabupaten_kota_nama 
              FROM hafiz h 
              LEFT JOIN kabupaten_kota k ON h.kabupaten_kota_id = k.id 
-             WHERE h.user_id = :user_id AND h.is_aktif = 1",
+             WHERE h.user_id = :user_id AND h.is_aktif = 1
+             ORDER BY h.tahun_tes DESC LIMIT 1",
             ['user_id' => $userId]
         );
     }
@@ -118,12 +119,24 @@ class Hafiz
      */
     public static function create(array $data): int
     {
-        // Check if user already exists
-        $username = $data['telepon'] ?: $data['nik'];
-        $user = User::findByUsername($username);
+        // Prioritize NIK as username for Hafiz to ensure uniqueness and prevent account collisions
+        $username = $data['nik'];
+        
+        // Find existing user (including inactive/pending)
+        $user = User::findByUsernameAll($username);
+
+        if (!$user && !empty($data['telepon'])) {
+            // Check if user exists with phone number as username
+            $user = User::findByUsernameAll($data['telepon']);
+        }
 
         if ($user) {
             $userId = $user['id'];
+            // If user exists but role is not hafiz, update it? 
+            // Better not touch role if it's admin, but usually NIK-based users will be hafiz.
+            if ($user['role'] !== ROLE_HAFIZ) {
+                User::update($userId, ['role' => ROLE_HAFIZ]);
+            }
         } else {
             // Create user account for Hafiz (password = NIK)
             $userId = User::create([
@@ -133,8 +146,9 @@ class Hafiz
                 'nama' => $data['nama'],
                 'email' => $data['email'] ?? null,
                 'telepon' => $data['telepon'] ?? null,
+                'is_active' => 1, // Admin-created users are active by default
             ]);
-        };
+        }
 
         // Create Hafiz record
         Database::execute(
@@ -142,12 +156,12 @@ class Hafiz
                 user_id, nik, nama, tempat_lahir, tanggal_lahir, jenis_kelamin,
                 alamat, rt, rw, desa_kelurahan, kecamatan, kabupaten_kota_id,
                 telepon, email, sertifikat_tahfidz, mengajar, tmt_mengajar,
-                tempat_mengajar, tahun_tes
+                tempat_mengajar, tahun_tes, is_aktif
             ) VALUES (
                 :user_id, :nik, :nama, :tempat_lahir, :tanggal_lahir, :jenis_kelamin,
                 :alamat, :rt, :rw, :desa_kelurahan, :kecamatan, :kabupaten_kota_id,
                 :telepon, :email, :sertifikat_tahfidz, :mengajar, :tmt_mengajar,
-                :tempat_mengajar, :tahun_tes
+                :tempat_mengajar, :tahun_tes, 1
             )",
             [
                 'user_id' => $userId,
@@ -240,7 +254,7 @@ class Hafiz
     /**
      * Get statistics by Kabupaten/Kota
      */
-    public static function getStatsByKabko(int $tahun = null, ?int $kabkoId = null): array
+    public static function getStatsByKabko(?int $tahun = null, ?int $kabkoId = null): array
     {
         $tahun = $tahun ?? TAHUN_ANGGARAN;
         $where = "h.tahun_tes = :tahun AND h.is_aktif = 1";
