@@ -192,7 +192,7 @@
                                 </li>
                             <?php endif; ?>
 
-                            <?php if ($role === ROLE_ADMIN_PROV || $role === ROLE_ADMIN_KABKO || $role === ROLE_PENGUJI): ?>
+                            <?php if ($role === ROLE_ADMIN_PROV || $role === ROLE_PENGUJI): ?>
                                 <li class="nav-item">
                                     <a class="nav-link <?= strpos($currentUri, '/seleksi') !== false ? 'active' : '' ?>" href="<?= APP_URL ?>/seleksi">
                                         <i class="bi bi-clipboard-check"></i> Seleksi & Penilaian

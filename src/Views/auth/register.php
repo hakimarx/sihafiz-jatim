@@ -9,6 +9,11 @@
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-6">
 
+                <?php
+                $sso = $_SESSION['sso_register'] ?? null;
+                $activeTab = $sso ? 'baru' : 'nik';
+                ?>
+
                 <!-- Card -->
                 <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
                     <!-- Card Header -->
@@ -16,7 +21,7 @@
                         <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 rounded-circle p-3 mb-3" style="width: 80px; height: 80px;">
                             <i class="bi bi-shield-check text-success" style="font-size: 2.5rem;"></i>
                         </div>
-                        <h3 class="fw-bold text-dark mb-1">Klaim Akun Hafiz</h3>
+                        <h3 class="fw-bold text-dark mb-1">Registrasi Hafiz</h3>
                         <p class="text-muted small mb-3">Pilih cara pendaftaran</p>
                     </div>
 
@@ -24,8 +29,8 @@
                         <!-- Flash Message -->
                         <?php $flash = getFlash(); ?>
                         <?php if ($flash): ?>
-                            <div class="alert alert-<?= $flash['type'] === 'error' ? 'danger' : $flash['type'] ?> d-flex align-items-start mb-4 rounded-3 shadow-sm border-0" role="alert">
-                                <i class="bi <?= $flash['type'] === 'error' ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill' ?> me-2 fs-5 mt-1"></i>
+                            <div class="alert alert-<?= $flash['type'] === 'error' ? 'danger' : ($flash['type'] === 'info' ? 'primary' : $flash['type']) ?> d-flex align-items-start mb-4 rounded-3 shadow-sm border-0" role="alert">
+                                <i class="bi <?= $flash['type'] === 'error' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill' ?> me-2 fs-5 mt-1"></i>
                                 <div><?= $flash['message'] ?></div>
                             </div>
                         <?php endif; ?>
@@ -33,9 +38,9 @@
                         <!-- Tab Navigation -->
                         <ul class="nav nav-pills nav-fill mb-4 gap-2" id="registerTabs" role="tablist">
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link active rounded-pill d-flex align-items-center justify-content-center gap-2"
+                                <button class="nav-link rounded-pill d-flex align-items-center justify-content-center gap-2 <?= $activeTab === 'nik' ? 'active' : '' ?>"
                                     id="nik-tab" data-bs-toggle="pill" data-bs-target="#nik-panel"
-                                    type="button" role="tab" aria-controls="nik-panel" aria-selected="true">
+                                    type="button" role="tab" aria-controls="nik-panel" aria-selected="<?= $activeTab === 'nik' ? 'true' : 'false' ?>">
                                     <i class="bi bi-card-heading"></i>
                                     <span>Cari NIK</span>
                                 </button>
@@ -48,12 +53,20 @@
                                     <span>Cari Nama</span>
                                 </button>
                             </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link rounded-pill d-flex align-items-center justify-content-center gap-2 <?= $activeTab === 'baru' ? 'active' : '' ?>"
+                                    id="baru-tab" data-bs-toggle="pill" data-bs-target="#baru-panel"
+                                    type="button" role="tab" aria-controls="baru-panel" aria-selected="<?= $activeTab === 'baru' ? 'true' : 'false' ?>">
+                                    <i class="bi bi-person-plus"></i>
+                                    <span>Daftar Baru</span>
+                                </button>
+                            </li>
                         </ul>
 
                         <!-- Tab Content -->
                         <div class="tab-content" id="registerTabContent">
                             <!-- TAB 1: CARI NIK -->
-                            <div class="tab-pane fade show active" id="nik-panel" role="tabpanel" aria-labelledby="nik-tab">
+                            <div class="tab-pane fade <?= $activeTab === 'nik' ? 'show active' : '' ?>" id="nik-panel" role="tabpanel" aria-labelledby="nik-tab">
                                 <!-- Info Box -->
                                 <div class="alert alert-info border-0 bg-info bg-opacity-10 rounded-3 mb-4" role="alert">
                                     <i class="bi bi-info-circle-fill text-info me-2"></i>
@@ -75,10 +88,6 @@
                                                 maxlength="16" placeholder="16 digit sesuai KTP" required pattern="[0-9]{16}"
                                                 inputmode="numeric" autocomplete="off"
                                                 style="letter-spacing: 2px; font-family: 'Courier New', monospace;">
-                                        </div>
-                                        <div class="form-text small mt-2">
-                                            <i class="bi bi-lock-fill text-muted me-1"></i>
-                                            NIK Anda aman dan terenkripsi.
                                         </div>
                                     </div>
 
@@ -110,7 +119,6 @@
                                     <small>
                                         <strong>Pendaftaran Alternatif:</strong> Gunakan pencarian ini jika NIK Anda
                                         <u>tidak terdaftar</u> atau <u>tidak sesuai format 16 digit</u>.
-                                        Masukkan nama dan kabupaten/kota Anda.
                                     </small>
                                 </div>
 
@@ -125,10 +133,6 @@
                                             <input type="text" class="form-control bg-light border-start-0" id="nama_cari" name="nama_cari"
                                                 placeholder="Nama sesuai data terdaftar" required minlength="3"
                                                 autocomplete="off">
-                                        </div>
-                                        <div class="form-text small mt-2">
-                                            <i class="bi bi-info-circle text-muted me-1"></i>
-                                            Masukkan nama lengkap atau sebagian nama Anda.
                                         </div>
                                     </div>
 
@@ -161,6 +165,87 @@
                                     <!-- Submit Button -->
                                     <button type="submit" class="btn btn-warning w-100 py-3 fw-bold rounded-3 shadow-sm transition-hover fs-5 text-dark">
                                         CARI DATA SAYA <i class="bi bi-search ms-2"></i>
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- TAB 3: DAFTAR BARU -->
+                            <div class="tab-pane fade <?= $activeTab === 'baru' ? 'show active' : '' ?>" id="baru-panel" role="tabpanel" aria-labelledby="baru-tab">
+                                <div class="text-center mb-4">
+                                    <?php if ($sso): ?>
+                                        <div class="alert alert-primary border-0 bg-primary bg-opacity-10 d-flex align-items-center gap-2 mb-3">
+                                            <?php if ($sso['foto']): ?>
+                                                <img src="<?= $sso['foto'] ?>" class="rounded-circle" width="32" height="32">
+                                            <?php else: ?>
+                                                <i class="bi bi-person-circle fs-4"></i>
+                                            <?php endif; ?>
+                                            <div class="text-start">
+                                                <div class="fw-bold small">Mendaftar via SSO <?= ucfirst($sso['type']) ?></div>
+                                                <div class="small opacity-75"><?= $sso['email'] ?></div>
+                                            </div>
+                                            <a href="<?= APP_URL ?>/register" class="ms-auto btn btn-link btn-sm text-decoration-none p-0">Batal</a>
+                                        </div>
+                                    <?php else: ?>
+                                        <p class="text-muted">Data Anda belum terdaftar? Daftar baru disini atau gunakan akun sosial media Anda.</p>
+
+                                        <div class="d-grid gap-2 mb-4">
+                                            <a href="<?= APP_URL ?>/login/google" class="btn btn-outline-danger py-2 rounded-3 d-flex align-items-center justify-content-center gap-2">
+                                                <i class="bi bi-google"></i> Daftar dengan Google
+                                            </a>
+                                            <div class="row g-2">
+                                                <div class="col-6">
+                                                    <a href="#" class="btn btn-outline-primary py-2 rounded-3 w-100 d-flex align-items-center justify-content-center gap-2 disabled">
+                                                        <i class="bi bi-facebook"></i> Facebook
+                                                    </a>
+                                                </div>
+                                                <div class="col-6">
+                                                    <a href="#" class="btn btn-outline-dark py-2 rounded-3 w-100 d-flex align-items-center justify-content-center gap-2 disabled">
+                                                        <i class="bi bi-instagram"></i> Instagram
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex align-items-center mb-4">
+                                            <hr class="flex-grow-1">
+                                            <span class="px-3 text-muted small fw-bold">ATAU</span>
+                                            <hr class="flex-grow-1">
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+
+                                <form action="<?= APP_URL ?>/register/fresh" method="POST" class="needs-validation" novalidate>
+                                    <?= csrfField() ?>
+
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-secondary text-uppercase">Nama Lengkap</label>
+                                        <input type="text" class="form-control" name="nama" required placeholder="Nama sesuai KTP" value="<?= htmlspecialchars($sso['nama'] ?? '') ?>">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-secondary text-uppercase">NIK (16 Digit)</label>
+                                        <input type="text" class="form-control" name="nik" required maxlength="16" pattern="[0-9]{16}" placeholder="16 digit angka">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-secondary text-uppercase">Kabupaten/Kota</label>
+                                        <select class="form-select" name="kabko_id" required>
+                                            <option value="">-- Pilih Wilayah --</option>
+                                            <?php if (!empty($kabko_list)): ?>
+                                                <?php foreach ($kabko_list as $kk): ?>
+                                                    <option value="<?= $kk['id'] ?>"><?= htmlspecialchars($kk['nama']) ?></option>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="form-label small fw-bold text-secondary text-uppercase">Nomor HP / WhatsApp</label>
+                                        <input type="tel" class="form-control" name="telepon" required placeholder="Contoh: 08123456789">
+                                    </div>
+
+                                    <button type="submit" class="btn btn-success w-100 py-3 fw-bold rounded-3 shadow-sm transition-hover fs-5">
+                                        <?= $sso ? 'SELESAIKAN PENDAFTARAN' : 'DAFTAR SEKARANG' ?> <i class="bi <?= $sso ? 'bi-check-circle' : 'bi-person-plus' ?> ms-2"></i>
                                     </button>
                                 </form>
                             </div>
@@ -220,7 +305,7 @@
     }
 
     .nav-pills .nav-link:not(.active):hover {
-        background-color: #f8f9fa;
+        background-color: #f8f9fa !important;
         border-color: #198754;
         color: #198754;
     }

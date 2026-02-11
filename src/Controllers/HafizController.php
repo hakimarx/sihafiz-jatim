@@ -315,8 +315,8 @@ class HafizController extends Controller
 
         $destination = $targetDir . $filename;
 
-        // Compress to 400KB
-        if ($this->compressImage($file['tmp_name'], $destination, 409600)) {
+        // Compress to 500KB
+        if ($this->compressImage($file['tmp_name'], $destination, 512000)) {
             return '/uploads/' . $subDir . '/' . $filename;
         }
 

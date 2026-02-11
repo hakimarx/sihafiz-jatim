@@ -229,4 +229,26 @@ class LaporanHarian
             'total_durasi' => 0
         ];
     }
+    /**
+     * Get coordinates and activity info for map markers
+     */
+    public static function getMapMarkers(?int $kabkoId = null): array
+    {
+        $sql = "SELECT lh.id, lh.tanggal, lh.jenis_kegiatan, lh.lokasi, lh.foto, 
+                       h.nama as hafiz_nama, k.nama as kabko_nama
+                FROM laporan_harian lh
+                JOIN hafiz h ON lh.hafiz_id = h.id
+                JOIN kabupaten_kota k ON h.kabupaten_kota_id = k.id
+                WHERE lh.lokasi IS NOT NULL AND lh.lokasi != ''";
+        $params = [];
+
+        if ($kabkoId) {
+            $sql .= " AND h.kabupaten_kota_id = :kabko_id";
+            $params['kabko_id'] = $kabkoId;
+        }
+
+        $sql .= " ORDER BY lh.tanggal DESC LIMIT 200";
+
+        return Database::query($sql, $params);
+    }
 }

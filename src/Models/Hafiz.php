@@ -261,8 +261,10 @@ class Hafiz
         $where = "h.tahun_tes = :tahun AND h.is_aktif = 1";
         $params = ['tahun' => $tahun];
 
+        $kbWhere = "";
         if ($kabkoId) {
             $where .= " AND k.id = :kabko_id";
+            $kbWhere = " WHERE k.id = :kabko_id";
             $params['kabko_id'] = $kabkoId;
         }
 
@@ -272,10 +274,11 @@ class Hafiz
                 COUNT(h.id) as total_pendaftar,
                 SUM(CASE WHEN h.status_kelulusan = 'lulus' THEN 1 ELSE 0 END) as total_lulus,
                 SUM(CASE WHEN h.status_kelulusan = 'pending' THEN 1 ELSE 0 END) as total_pending
-             FROM kabupaten_kota k
-             LEFT JOIN hafiz h ON k.id = h.kabupaten_kota_id AND {$where}
-             GROUP BY k.id
-             ORDER BY k.nama",
+              FROM kabupaten_kota k
+              LEFT JOIN hafiz h ON k.id = h.kabupaten_kota_id AND {$where}
+              {$kbWhere}
+              GROUP BY k.id
+              ORDER BY k.nama",
             $params
         );
     }
@@ -358,8 +361,10 @@ class Hafiz
         $where = "h.is_aktif = 1";
         $params = [];
 
+        $kbWhere = "";
         if ($kabkoId) {
             $where .= " AND h.kabupaten_kota_id = :kabko_id";
+            $kbWhere = " WHERE k.id = :kabko_id";
             $params['kabko_id'] = $kabkoId;
         }
 
@@ -371,6 +376,7 @@ class Hafiz
                 COUNT(h.id) as total
              FROM kabupaten_kota k
              LEFT JOIN hafiz h ON k.id = h.kabupaten_kota_id AND {$where}
+             {$kbWhere}
              GROUP BY k.id
              ORDER BY k.nama",
             $params

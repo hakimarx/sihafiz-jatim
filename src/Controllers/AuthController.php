@@ -173,8 +173,16 @@ class AuthController extends Controller
             }
 
             // 3. User tidak ditemukan
-            setFlash('error', 'Email <strong>' . htmlspecialchars($email) . '</strong> belum terdaftar. Silakan login manual atau daftar akun baru.');
-            $this->redirect(APP_URL . '/login');
+            $_SESSION['sso_register'] = [
+                'type' => 'google',
+                'email' => $email,
+                'google_id' => $googleId,
+                'nama' => $userInfo['name'] ?? '',
+                'foto' => $userInfo['picture'] ?? ''
+            ];
+
+            setFlash('info', 'Email Google <strong>' . htmlspecialchars($email) . '</strong> belum terdaftar. Silakan lengkapi data pendaftaran Hafiz Baru.');
+            $this->redirect(APP_URL . '/register');
         } catch (Exception $e) {
             error_log("Google Login Error: " . $e->getMessage());
             setFlash('error', 'Terjadi kesalahan saat login dengan Google.');

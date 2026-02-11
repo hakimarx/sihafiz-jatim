@@ -141,6 +141,68 @@
     </div>
 <?php endif; ?>
 
+<!-- Map Section -->
+<div class="card mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-map me-2"></i>Peta Lokasi Kegiatan</h5>
+        <small class="text-muted">Menampilkan 200 lokasi kegiatan terbaru</small>
+    </div>
+    <div class="card-body p-0">
+        <div id="map" style="height: 400px; width: 100%;"></div>
+    </div>
+</div>
+
+<!-- Leaflet Infrastructure -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Center of East Java
+        var map = L.map('map').setView([-7.5360, 112.2384], 8);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        var markers = <?= json_encode($mapMarkers) ?>;
+        var markerGroup = L.featureGroup();
+
+        markers.forEach(function(m) {
+            if (m.lokasi) {
+                // Parse "lat, lng" or "-lat, lng"
+                var parts = m.lokasi.split(',');
+                if (parts.length === 2) {
+                    var lat = parseFloat(parts[0].trim());
+                    var lng = parseFloat(parts[1].trim());
+
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                        var popupContent = `
+                            <div style="width: 200px;">
+                                <strong>${m.hafiz_nama}</strong><br>
+                                <small class="text-muted">${m.kabko_nama}</small><hr class="my-1">
+                                <div><i class="bi bi-calendar-event me-1"></i> ${m.tanggal}</div>
+                                <div><i class="bi bi-tag me-1"></i> ${m.jenis_kegiatan}</div>
+                                ${m.foto ? `<img src="<?= APP_URL ?>${m.foto}" class="img-fluid mt-2 rounded" style="max-height: 100px; width: 100%; object-fit: cover;">` : ''}
+                                <a href="<?= APP_URL ?>/admin/laporan?id=${m.id}" class="btn btn-xs btn-primary w-100 mt-2 py-1" style="font-size: 10px;">Detail Laporan</a>
+                            </div>
+                        `;
+
+                        var marker = L.marker([lat, lng]).bindPopup(popupContent);
+                        markerGroup.addLayer(marker);
+                    }
+                }
+            }
+        });
+
+        markerGroup.addTo(map);
+
+        if (markers.length > 0 && markerGroup.getLayers().length > 0) {
+            map.fitBounds(markerGroup.getBounds().pad(0.1));
+        }
+    });
+</script>
+
 <!-- Rekap per Kabupaten/Kota -->
 <div class="card mb-4">
     <div class="card-header bg-white py-3">

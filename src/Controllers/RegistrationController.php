@@ -474,4 +474,107 @@ class RegistrationController extends Controller
 
         return null;
     }
+    /**
+     * Step: Fresh Register (Hafiz not in DB)
+     */
+    public function freshRegister(): void
+    {
+        if (!$this->isPost()) {
+            $this->redirect(APP_URL . '/register');
+            return;
+        }
+
+        if (!$this->validateCsrf()) {
+            setFlash('error', 'Sesi tidak valid.');
+            $this->redirect(APP_URL . '/register');
+            return;
+        }
+
+        $nama = trim($this->input('nama'));
+        $nik = sanitizeNik($this->input('nik'));
+        $kabkoId = intval($this->input('kabko_id'));
+        $telepon = sanitizePhone($this->input('telepon'));
+
+        // Basic Validation
+        $errors = [];
+        if (empty($nama) || strlen($nama) < 3) $errors[] = "Nama tidak valid.";
+        if (!isValidNik($nik)) $errors[] = "NIK harus 16 digit angka.";
+        if (empty($kabkoId)) $errors[] = "Pilih Kabupaten/Kota.";
+        if (empty($telepon) || strlen($telepon) < 10) $errors[] = "Nomor HP tidak valid.";
+
+        // Check if NIK already exists in Hafiz
+        if (Hafiz::findByNik($nik)) {
+            setFlash('error', 'NIK sudah terdaftar. Silakan gunakan tab <b>"Cari NIK"</b> untuk mengklaim akun Anda.');
+            $this->redirect(APP_URL . '/register');
+            return;
+        }
+
+        // Check if Phone already exists in Users
+        if (User::usernameExists($telepon)) {
+            $errors[] = "Nomor HP sudah terdaftar. Silakan login atau gunakan nomor lain.";
+        }
+
+        if (!empty($errors)) {
+            setFlash('error', implode('<br>', $errors));
+            $this->redirect(APP_URL . '/register');
+            return;
+        }
+
+        try {
+            Database::beginTransaction();
+
+            $sso = $_SESSION['sso_register'] ?? null;
+            $email = $sso ? $sso['email'] : ($telepon . '@hafizjatim.id'); // Placeholder email if not SSO
+            $googleId = ($sso && $sso['type'] === 'google') ? $sso['google_id'] : null;
+
+            // 1. Create User
+            $password = substr($nik, -6); // Default password: last 6 digits of NIK
+            $userId = User::create([
+                'username' => $telepon,
+                'password' => $password,
+                'role' => ROLE_HAFIZ,
+                'kabupaten_kota_id' => $kabkoId,
+                'nama' => $nama,
+                'email' => $email,
+                'telepon' => $telepon,
+                'google_id' => $googleId,
+                'foto' => $sso['foto'] ?? null,
+                'is_active' => 0 // Pending approval
+            ]);
+
+            // 2. Create Hafiz
+            Database::execute(
+                "INSERT INTO hafiz (nama, nik, kabupaten_kota_id, telepon, user_id, is_aktif, tahun_tes) 
+                 VALUES (:nama, :nik, :kabko_id, :telepon, :user_id, 1, :tahun)",
+                [
+                    'nama' => $nama,
+                    'nik' => $nik,
+                    'kabko_id' => $kabkoId,
+                    'telepon' => $telepon,
+                    'user_id' => $userId,
+                    'tahun' => TAHUN_ANGGARAN
+                ]
+            );
+
+            Database::commit();
+
+            // Clear SSO Session
+            if ($sso) unset($_SESSION['sso_register']);
+
+            setFlash(
+                'success',
+                '<strong>Pendaftaran Berhasil!</strong><br>' .
+                    'Akun Anda sedang menunggu persetujuan admin. <br>' .
+                    'Silakan login nanti menggunakan:<br>' .
+                    'Username: <b>' . $telepon . '</b><br>' .
+                    'Password: <b>' . $password . '</b> (6 digit terakhir NIK)'
+            );
+            $this->redirect(APP_URL . '/login');
+        } catch (Exception $e) {
+            Database::rollback();
+            error_log("Fresh Register Error: " . $e->getMessage());
+            setFlash('error', 'Terjadi kesalahan saat pendaftaran.');
+            $this->redirect(APP_URL . '/register');
+        }
+    }
 }

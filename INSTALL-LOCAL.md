@@ -16,9 +16,9 @@ Aplikasi sudah terinstall dan berjalan di Laragon local server Anda.
 ---
 
 ## 📂 Lokasi File
-- **Source Code**: `C:\laragon\www\sihafiz-jatim`
-- **Konfigurasi**: `C:\laragon\www\sihafiz-jatim\.env`
-- **Uploads**: `C:\laragon\www\sihafiz-jatim\public\uploads`
+- **Source Code**: `D:\Seleksi Huffadz aplikasi data hafidz 2023\sihafiz-jatim`
+- **Konfigurasi**: `D:\Seleksi Huffadz aplikasi data hafidz 2023\sihafiz-jatim\.env`
+- **Uploads**: `D:\Seleksi Huffadz aplikasi data hafidz 2023\sihafiz-jatim\public\uploads`
 
 ---
 

@@ -195,8 +195,10 @@ class User
         }
 
         if (!empty($filters['search'])) {
-            $where .= " AND (u.nama LIKE :search OR u.username LIKE :search OR u.email LIKE :search)";
-            $params['search'] = "%{$filters['search']}%";
+            $where .= " AND (u.nama LIKE :search1 OR u.username LIKE :search2 OR u.email LIKE :search3)";
+            $params['search1'] = "%{$filters['search']}%";
+            $params['search2'] = "%{$filters['search']}%";
+            $params['search3'] = "%{$filters['search']}%";
         }
 
         if (!empty($filters['kabupaten_kota_id'])) {

@@ -6,14 +6,14 @@
  * Semua request masuk melalui file ini.
  */
 
-// Error reporting untuk development
-error_reporting(E_ALL);
-ini_set('display_errors', 0); // Jangan tampilkan error ke user
-
 // ============================================
 // LOAD CONFIGURATION
 // ============================================
 require_once __DIR__ . '/../config/app.php';
+
+// Error reporting disesuaikan dengan environment
+error_reporting(E_ALL);
+ini_set('display_errors', APP_ENV === 'development' ? 1 : 0);
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/security.php';
 
@@ -101,6 +101,7 @@ $router->post('/register/check-nik', [RegistrationController::class, 'checkNik']
 $router->post('/register/check-nama', [RegistrationController::class, 'checkNama']);
 $router->post('/register/choose', [RegistrationController::class, 'chooseHafiz']);
 $router->post('/register/verify', [RegistrationController::class, 'verify']);
+$router->post('/register/fresh', [RegistrationController::class, 'freshRegister']);
 
 // Admin Routes
 $router->get('/admin/dashboard', [AdminController::class, 'dashboard']);

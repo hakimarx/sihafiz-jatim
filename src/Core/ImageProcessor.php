@@ -11,24 +11,31 @@ trait ImageProcessor
     /**
      * Compress and save image to specific size (max 400KB)
      */
-    protected function compressImage(string $sourcePath, string $destinationPath, int $maxSizeBytes = 409600): bool
+    public function compressImage(string $sourcePath, string $destinationPath, int $maxFileSize = 512000): bool
     {
-        $info = getimagesize($sourcePath);
-        if (!$info) return false;
+        $quality = 85; // Initial quality
+        $minQuality = 10;
+        $maxIterations = 10;
+        $iteration = 0;
 
-        $mime = $info['mime'];
+        $imgInfo = getimagesize($sourcePath);
+        if (!$imgInfo) return false;
 
-        // Create image from source
+        $mime = $imgInfo['mime'];
+        $width = $imgInfo[0];
+        $height = $imgInfo[1];
+
+        // Load image
         switch ($mime) {
             case 'image/jpeg':
                 $image = imagecreatefromjpeg($sourcePath);
                 break;
             case 'image/png':
                 $image = imagecreatefrompng($sourcePath);
-                // Convert PNG to JPEG to ensure better compression
-                $bg = imagecreatetruecolor(imagesx($image), imagesy($image));
+                // Convert to true color to support transparency/JPG conversion
+                $bg = imagecreatetruecolor($width, $height);
                 imagefill($bg, 0, 0, imagecolorallocate($bg, 255, 255, 255));
-                imagecopy($bg, $image, 0, 0, 0, 0, imagesx($image), imagesy($image));
+                imagecopy($bg, $image, 0, 0, 0, 0, $width, $height);
                 imagedestroy($image);
                 $image = $bg;
                 break;
@@ -36,8 +43,8 @@ trait ImageProcessor
                 return false;
         }
 
-        // Auto-rotate based on EXIF
-        if (function_exists('exif_read_data')) {
+        // Fix orientation if EXIF is available
+        if ($mime === 'image/jpeg' && function_exists('exif_read_data')) {
             $exif = @exif_read_data($sourcePath);
             if (!empty($exif['Orientation'])) {
                 switch ($exif['Orientation']) {
@@ -54,27 +61,24 @@ trait ImageProcessor
             }
         }
 
-        // Initial quality
-        $quality = 90;
-        $saved = false;
-
-        // Iteratively reduce quality until under max size
+        // Iterative compression to reach target size
         do {
             ob_start();
             imagejpeg($image, null, $quality);
-            $size = ob_get_length();
-            ob_end_clean();
+            $imgData = ob_get_clean();
+            $currentSize = strlen($imgData);
 
-            if ($size <= $maxSizeBytes || $quality <= 10) {
-                imagejpeg($image, $destinationPath, $quality);
-                $saved = true;
+            if ($currentSize <= $maxFileSize || $quality <= $minQuality) {
+                file_put_contents($destinationPath, $imgData);
                 break;
             }
+
             $quality -= 10;
-        } while ($quality > 0);
+            $iteration++;
+        } while ($iteration < $maxIterations);
 
         imagedestroy($image);
-        return $saved;
+        return true;
     }
 
     /**

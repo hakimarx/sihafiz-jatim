@@ -46,6 +46,7 @@ class AdminController extends Controller
 
         $statsByTahun = Hafiz::getStatsByTahunKelulusan($kabkoId);
         $statsLaporan = Hafiz::getStatsLaporan($kabkoId);
+        $mapMarkers = LaporanHarian::getMapMarkers($kabkoId);
 
         $this->view('admin.dashboard', [
             'title' => 'Dashboard Statistik - ' . APP_NAME,
@@ -59,6 +60,7 @@ class AdminController extends Controller
             'totalPerempuan' => $totalPerempuan,
             'statsByTahun' => $statsByTahun,
             'statsLaporan' => $statsLaporan,
+            'mapMarkers' => $mapMarkers,
         ]);
     }
 

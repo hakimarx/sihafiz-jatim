@@ -217,12 +217,13 @@ class Seleksi
      */
     public static function getStats(int $tahun, ?int $kabkoId = null): array
     {
-        $where = "h.tahun_tes = :tahun AND h.is_aktif = 1";
-        $params = ['tahun' => $tahun];
+        $statsParams = [
+            'tahun_join' => $tahun,
+            'tahun_where' => $tahun
+        ];
 
         if ($kabkoId) {
-            $where .= " AND h.kabupaten_kota_id = :kabko_id";
-            $params['kabko_id'] = $kabkoId;
+            $statsParams['kabko_id'] = $kabkoId;
         }
 
         return Database::queryOne(
@@ -235,7 +236,7 @@ class Seleksi
              FROM hafiz h
              LEFT JOIN seleksi s ON h.id = s.hafiz_id AND s.tahun_anggaran = :tahun_join
              WHERE h.tahun_tes = :tahun_where AND h.is_aktif = 1" . ($kabkoId ? " AND h.kabupaten_kota_id = :kabko_id" : ""),
-            array_merge($params, ['tahun_join' => $tahun, 'tahun_where' => $tahun])
+            $statsParams
         ) ?? [
             'total_peserta' => 0,
             'sudah_dinilai' => 0,
@@ -250,12 +251,13 @@ class Seleksi
      */
     public static function getForExport(int $tahun, ?int $kabkoId = null): array
     {
-        $where = "h.tahun_tes = :tahun AND h.is_aktif = 1";
-        $params = ['tahun' => $tahun];
+        $exportParams = [
+            'tahun_join' => $tahun,
+            'tahun_where' => $tahun
+        ];
 
         if ($kabkoId) {
-            $where .= " AND h.kabupaten_kota_id = :kabko_id";
-            $params['kabko_id'] = $kabkoId;
+            $exportParams['kabko_id'] = $kabkoId;
         }
 
         return Database::query(
@@ -270,7 +272,7 @@ class Seleksi
              LEFT JOIN seleksi s ON h.id = s.hafiz_id AND s.tahun_anggaran = :tahun_join
              LEFT JOIN kabupaten_kota k ON h.kabupaten_kota_id = k.id
              WHERE h.tahun_tes = :tahun_where AND h.is_aktif = 1" . ($kabkoId ? " AND h.kabupaten_kota_id = :kabko_id" : ""),
-            ['tahun_join' => $tahun, 'tahun_where' => $tahun, 'kabko_id' => $kabkoId]
+            $exportParams
         );
     }
 }
