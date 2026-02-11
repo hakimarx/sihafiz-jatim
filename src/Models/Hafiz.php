@@ -121,7 +121,7 @@ class Hafiz
     {
         // Prioritize NIK as username for Hafiz to ensure uniqueness and prevent account collisions
         $username = $data['nik'];
-        
+
         // Find existing user (including inactive/pending)
         $user = User::findByUsernameAll($username);
 
@@ -222,7 +222,8 @@ class Hafiz
             'status_insentif',
             'keterangan',
             'foto_profil',
-            'foto_ktp'
+            'foto_ktp',
+            'tanda_tangan'
         ];
 
         foreach ($allowedFields as $field) {

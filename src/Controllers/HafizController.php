@@ -377,7 +377,16 @@ class HafizController extends Controller
             'email' => $this->input('email'),
             'nama_bank' => $this->input('nama_bank'),
             'nomor_rekening' => $this->input('nomor_rekening'),
+            'tanda_tangan' => $this->input('tanda_tangan'), // New: Base64 signature
         ];
+
+        // Validasi Wajib KTP (jika belum ada di DB)
+        $isKtpUploaded = (isset($_FILES['foto_ktp']) && $_FILES['foto_ktp']['error'] === UPLOAD_ERR_OK);
+        if (!$isKtpUploaded && empty($this->hafiz['foto_ktp'])) {
+            setFlash('error', 'Wajib mengunggah Foto KTP untuk melanjutkan.');
+            $this->redirect(APP_URL . '/hafiz/profil/edit');
+            return;
+        }
 
         // Handle Profile Photo
         if (isset($_FILES['foto_profil']) && $_FILES['foto_profil']['error'] === UPLOAD_ERR_OK) {

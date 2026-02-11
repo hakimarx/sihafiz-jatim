@@ -31,7 +31,7 @@
 
             <div class="card shadow-sm">
                 <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
-                    <span>Upload KTP (OCR Pintar)</span>
+                    <span>Upload KTP <span class="text-danger">* (Wajib)</span></span>
                     <span id="ocr-status" class="badge bg-secondary" style="display:none;">Menganalisa...</span>
                 </div>
                 <div class="card-body">
@@ -193,10 +193,27 @@
 
                     <div class="d-flex justify-content-between mt-4 pt-3 border-top">
                         <a href="<?= APP_URL ?>/hafiz/profil" class="btn btn-outline-secondary">Batal</a>
-                        <button type="submit" class="btn btn-success px-4">
+                        <button type="submit" class="btn btn-success px-4" onclick="return saveSignature()">
                             <i class="bi bi-save me-2"></i>Simpan Perubahan
                         </button>
                     </div>
+
+                    <h6 class="border-bottom pb-2 mb-3 mt-5 fw-bold"><i class="bi bi-pencil me-2"></i>Tanda Tangan Digital</h6>
+                    <div class="alert alert-light border small text-muted mb-2">
+                        <i class="bi bi-info-circle me-1"></i> Silakan tanda tangan di dalam kotak. Gunakan Mouse atau Layar Sentuh.
+                    </div>
+                    <div class="signature-wrapper border rounded bg-white mb-2" style="max-width: 400px; height: 160px; position: relative; touch-action: none;">
+                        <canvas id="signature-pad" class="signature-pad" style="width: 100%; height: 100%; cursor: crosshair;"></canvas>
+                        <button type="button" class="btn btn-sm btn-link p-1 text-danger" style="position: absolute; top: 0; right: 0;" onclick="signaturePad.clear()">
+                            <i class="bi bi-x-circle"></i> Bersihkan
+                        </button>
+                    </div>
+                    <input type="hidden" name="tanda_tangan" id="tanda_tangan_input">
+                    <?php if (!empty($hafiz['tanda_tangan'])): ?>
+                        <div class="mt-2 small text-muted">
+                            <i class="bi bi-check-circle-fill text-success"></i> Tanda tangan sudah tersimpan.
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -205,7 +222,31 @@
 
 <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
 
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@5.0.2/dist/signature_pad.umd.min.js"></script>
 <script>
+    // Signature Pad Initialization
+    const canvas = document.getElementById('signature-pad');
+    const signaturePad = new SignaturePad(canvas, {
+        backgroundColor: 'rgb(255, 255, 255)'
+    });
+
+    function resizeCanvas() {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
+        signaturePad.clear();
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    function saveSignature() {
+        if (!signaturePad.isEmpty()) {
+            document.getElementById('tanda_tangan_input').value = signaturePad.toDataURL();
+        }
+        return true;
+    }
+
     function setupPreview(inputId, previewId, placeholderId = null) {
         document.getElementById(inputId).addEventListener('change', function(e) {
             const file = e.target.files[0];

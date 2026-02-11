@@ -25,9 +25,9 @@ BEGIN
         ALTER TABLE `hafiz` ADD COLUMN `foto_ktp` VARCHAR(255) DEFAULT NULL;
     END IF;
 
-    -- Cek & Tambah remember_token
-    IF NOT EXISTS (SELECT * FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='users' AND column_name='remember_token') THEN
-        ALTER TABLE `users` ADD COLUMN `remember_token` VARCHAR(255) DEFAULT NULL;
+    -- Cek & Tambah tanda_tangan
+    IF NOT EXISTS (SELECT * FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='hafiz' AND column_name='tanda_tangan') THEN
+        ALTER TABLE `hafiz` ADD COLUMN `tanda_tangan` MEDIUMTEXT DEFAULT NULL;
     END IF;
 END //
 DELIMITER ;

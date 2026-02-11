@@ -84,8 +84,9 @@ class Seleksi
         // Count total
         $countSql = "SELECT COUNT(*) as total 
                      FROM hafiz h 
-                     LEFT JOIN seleksi s ON h.id = s.hafiz_id AND s.tahun_anggaran = {$tahun}
+                     LEFT JOIN seleksi s ON h.id = s.hafiz_id AND s.tahun_anggaran = :tahun_join
                      WHERE {$whereClause}";
+        $params['tahun_join'] = $tahun;
         $total = Database::queryOne($countSql, $params)['total'];
 
         // Get data
@@ -95,7 +96,7 @@ class Seleksi
                        s.status_lulus, s.tanggal_tes, s.catatan,
                        u.nama as penguji_nama
                 FROM hafiz h
-                LEFT JOIN seleksi s ON h.id = s.hafiz_id AND s.tahun_anggaran = {$tahun}
+                LEFT JOIN seleksi s ON h.id = s.hafiz_id AND s.tahun_anggaran = :tahun_join
                 LEFT JOIN kabupaten_kota k ON h.kabupaten_kota_id = k.id
                 LEFT JOIN users u ON s.penguji_id = u.id
                 WHERE {$whereClause}
@@ -230,11 +231,11 @@ class Seleksi
                 SUM(CASE WHEN s.id IS NOT NULL THEN 1 ELSE 0 END) as sudah_dinilai,
                 SUM(CASE WHEN s.status_lulus = 1 THEN 1 ELSE 0 END) as lulus,
                 SUM(CASE WHEN s.status_lulus = 0 AND s.nilai_total IS NOT NULL THEN 1 ELSE 0 END) as tidak_lulus,
-                AVG(s.nilai_total) as rata_rata_nilai
+                AVG(COALESCE(s.nilai_total, 0)) as rata_rata_nilai
              FROM hafiz h
-             LEFT JOIN seleksi s ON h.id = s.hafiz_id AND s.tahun_anggaran = :tahun
-             WHERE {$where}",
-            $params
+             LEFT JOIN seleksi s ON h.id = s.hafiz_id AND s.tahun_anggaran = :tahun_join
+             WHERE h.tahun_tes = :tahun_where AND h.is_aktif = 1" . ($kabkoId ? " AND h.kabupaten_kota_id = :kabko_id" : ""),
+            array_merge($params, ['tahun_join' => $tahun, 'tahun_where' => $tahun])
         ) ?? [
             'total_peserta' => 0,
             'sudah_dinilai' => 0,
@@ -266,11 +267,10 @@ class Seleksi
                 CASE WHEN s.status_lulus = 1 THEN 'LULUS' ELSE 'TIDAK LULUS' END as status,
                 s.tanggal_tes, s.catatan
              FROM hafiz h
-             LEFT JOIN seleksi s ON h.id = s.hafiz_id AND s.tahun_anggaran = :tahun
+             LEFT JOIN seleksi s ON h.id = s.hafiz_id AND s.tahun_anggaran = :tahun_join
              LEFT JOIN kabupaten_kota k ON h.kabupaten_kota_id = k.id
-             WHERE {$where}
-             ORDER BY k.nama, h.nama",
-            $params
+             WHERE h.tahun_tes = :tahun_where AND h.is_aktif = 1" . ($kabkoId ? " AND h.kabupaten_kota_id = :kabko_id" : ""),
+            ['tahun_join' => $tahun, 'tahun_where' => $tahun, 'kabko_id' => $kabkoId]
         );
     }
 }
