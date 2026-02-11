@@ -3,9 +3,9 @@
 /**
  * Registration Controller
  * =======================
- * Skema Registrasi: "KLAIM NIK"
+ * Skema Registrasi: "KLAIM NIK" + "CARI NAMA" (alternatif)
  * 
- * ALUR:
+ * ALUR UTAMA (NIK VALID):
  * 1. Hafiz input NIK (16 digit)
  * 2. Sistem cek NIK di database (dari data import CSV yang sudah lulus)
  * 3. Jika DITEMUKAN → Tampilkan nama (samaran) untuk konfirmasi
@@ -13,6 +13,13 @@
  * 5. Jika cocok → Hafiz set No HP + Password
  * 6. Akun status "pending" → menunggu approval admin kabko
  * 7. Admin kabko approve → akun aktif, bisa login
+ * 
+ * ALUR ALTERNATIF (NIK TIDAK VALID / KOSONG):
+ * 1. Hafiz pilih tab "Cari Berdasarkan Nama"
+ * 2. Input Nama + pilih Kabupaten/Kota
+ * 3. Sistem tampilkan hasil pencarian (nama disamarkan)
+ * 4. Hafiz pilih data mereka → lanjut ke verifikasi TGL Lahir
+ * 5. Sama dengan alur utama step 4-7
  * 
  * KEAMANAN:
  * - NIK harus sudah ada di database (anti spam registrasi asal)
@@ -25,7 +32,7 @@
 class RegistrationController extends Controller
 {
     /**
-     * Step 1: Form input NIK
+     * Step 1: Form input NIK (+ tab Cari Nama)
      */
     public function index(): void
     {
@@ -36,10 +43,14 @@ class RegistrationController extends Controller
 
         $captcha = generateCaptcha();
 
+        // Load list kabupaten/kota untuk form pencarian nama
+        $kabkoList = KabupatenKota::getAll();
+
         $this->view('auth.register', [
             'title' => 'Klaim Akun Hafiz - ' . APP_NAME,
             'captcha' => $captcha,
-            'step' => 'nik'
+            'step' => 'nik',
+            'kabko_list' => $kabkoList ?? []
         ]);
     }
 
@@ -72,7 +83,7 @@ class RegistrationController extends Controller
 
         // Validate NIK format
         if (!isValidNik($nik)) {
-            setFlash('error', 'NIK harus 16 digit angka.');
+            setFlash('error', 'NIK harus 16 digit angka. Jika NIK Anda tidak sesuai format, gunakan tab <b>"Cari Berdasarkan Nama"</b> untuk mendaftar.');
             $this->redirect(APP_URL . '/register');
             return;
         }
@@ -81,7 +92,7 @@ class RegistrationController extends Controller
         $hafiz = Hafiz::findByNik($nik);
 
         if (!$hafiz) {
-            setFlash('error', 'NIK tidak ditemukan dalam database hafiz yang telah lulus seleksi. Pastikan NIK Anda benar atau hubungi admin kabupaten/kota Anda.');
+            setFlash('error', 'NIK tidak ditemukan dalam database hafiz. Coba gunakan tab <b>"Cari Berdasarkan Nama"</b> atau hubungi admin kabupaten/kota Anda.');
             $this->redirect(APP_URL . '/register');
             return;
         }
@@ -107,6 +118,177 @@ class RegistrationController extends Controller
         $this->view('auth.register_verify', [
             'title' => 'Verifikasi Identitas - ' . APP_NAME,
             'nama_samaran' => $namaSamaran,
+            'kabupaten' => $hafiz['kabupaten_kota_nama'] ?? '',
+            'captcha' => $captcha,
+            'step' => 'verify'
+        ]);
+    }
+
+    /**
+     * ALTERNATIVE: Cari hafiz berdasarkan Nama + Kabupaten/Kota
+     * Untuk hafiz yang NIK-nya tidak valid atau kosong
+     */
+    public function checkNama(): void
+    {
+        if (!$this->isPost()) {
+            $this->redirect(APP_URL . '/register');
+            return;
+        }
+
+        // Validate CSRF
+        if (!$this->validateCsrf()) {
+            setFlash('error', 'Sesi tidak valid. Silakan coba lagi.');
+            $this->redirect(APP_URL . '/register');
+            return;
+        }
+
+        $nama = trim($this->input('nama_cari'));
+        $kabkoId = intval($this->input('kabko_id'));
+        $captchaInput = $this->input('captcha');
+
+        // Validate Captcha
+        if (!validateCaptcha($captchaInput)) {
+            setFlash('error', 'Jawaban captcha salah. Silakan coba lagi.');
+            $this->redirect(APP_URL . '/register');
+            return;
+        }
+
+        // Validate nama input
+        if (empty($nama) || strlen($nama) < 3) {
+            setFlash('error', 'Nama harus diisi minimal 3 karakter.');
+            $this->redirect(APP_URL . '/register');
+            return;
+        }
+
+        if (empty($kabkoId)) {
+            setFlash('error', 'Pilih Kabupaten/Kota Anda.');
+            $this->redirect(APP_URL . '/register');
+            return;
+        }
+
+        // Cari hafiz berdasarkan nama dan kabko (LIKE search)
+        $results = Database::query(
+            "SELECT h.id, h.nama, h.nik, h.tanggal_lahir, h.user_id,
+                    kk.nama AS kabupaten_kota_nama
+             FROM hafiz h
+             LEFT JOIN kabupaten_kota kk ON h.kabupaten_kota_id = kk.id
+             WHERE h.nama LIKE :nama 
+             AND h.kabupaten_kota_id = :kabko_id
+             AND h.is_aktif = 1
+             LIMIT 10",
+            ['nama' => '%' . $nama . '%', 'kabko_id' => $kabkoId]
+        );
+
+        if (empty($results)) {
+            setFlash('error', 'Nama tidak ditemukan di Kabupaten/Kota yang dipilih. Pastikan nama sesuai dengan data yang terdaftar atau hubungi admin.');
+            $this->redirect(APP_URL . '/register');
+            return;
+        }
+
+        // Samarkan dan siapkan list pilihan
+        $choices = [];
+        foreach ($results as $r) {
+            // Skip yang sudah punya akun
+            if (!empty($r['user_id'])) continue;
+
+            $choices[] = [
+                'id' => $r['id'],
+                'nama_samaran' => $this->maskName($r['nama']),
+                'nik_samaran' => $this->maskNik($r['nik']),
+                'kabupaten' => $r['kabupaten_kota_nama'] ?? ''
+            ];
+        }
+
+        if (empty($choices)) {
+            setFlash('error', 'Semua data yang cocok sudah memiliki akun. Silakan login atau hubungi admin.');
+            $this->redirect(APP_URL . '/login');
+            return;
+        }
+
+        // Simpan di session
+        $_SESSION['reg_nama_search'] = $nama;
+        $_SESSION['reg_choices'] = $choices;
+        $_SESSION['reg_step'] = 'choose';
+        $_SESSION['reg_time'] = time();
+
+        $captcha = generateCaptcha();
+
+        $this->view('auth.register_verify', [
+            'title' => 'Pilih Data Anda - ' . APP_NAME,
+            'choices' => $choices,
+            'captcha' => $captcha,
+            'step' => 'choose'
+        ]);
+    }
+
+    /**
+     * Step Choose: Hafiz memilih data mereka dari list pencarian nama
+     * Lalu lanjut ke verifikasi tanggal lahir
+     */
+    public function chooseHafiz(): void
+    {
+        if (!$this->isPost()) {
+            $this->redirect(APP_URL . '/register');
+            return;
+        }
+
+        if (!$this->validateCsrf()) {
+            setFlash('error', 'Sesi tidak valid. Silakan coba lagi.');
+            $this->redirect(APP_URL . '/register');
+            return;
+        }
+
+        $hafizId = intval($this->input('hafiz_id'));
+
+        if (empty($hafizId)) {
+            setFlash('error', 'Pilih data Anda.');
+            $this->redirect(APP_URL . '/register');
+            return;
+        }
+
+        // Check session
+        if (empty($_SESSION['reg_choices']) || $_SESSION['reg_step'] !== 'choose') {
+            setFlash('error', 'Sesi tidak valid. Silakan mulai ulang.');
+            $this->redirect(APP_URL . '/register');
+            return;
+        }
+
+        // Verify the chosen ID is in the results
+        $valid = false;
+        foreach ($_SESSION['reg_choices'] as $c) {
+            if ($c['id'] == $hafizId) {
+                $valid = true;
+                break;
+            }
+        }
+
+        if (!$valid) {
+            setFlash('error', 'Data tidak valid. Silakan mulai ulang.');
+            $this->redirect(APP_URL . '/register');
+            return;
+        }
+
+        // Get hafiz data
+        $hafiz = Hafiz::findById($hafizId);
+        if (!$hafiz) {
+            setFlash('error', 'Data tidak ditemukan. Silakan mulai ulang.');
+            $this->redirect(APP_URL . '/register');
+            return;
+        }
+
+        // Update session for verify step
+        $_SESSION['reg_nik'] = $hafiz['nik'];
+        $_SESSION['reg_hafiz_id'] = $hafiz['id'];
+        $_SESSION['reg_step'] = 'verify';
+        $_SESSION['reg_time'] = time();
+
+        unset($_SESSION['reg_choices'], $_SESSION['reg_nama_search']);
+
+        $captcha = generateCaptcha();
+
+        $this->view('auth.register_verify', [
+            'title' => 'Verifikasi Identitas - ' . APP_NAME,
+            'nama_samaran' => $this->maskName($hafiz['nama']),
             'kabupaten' => $hafiz['kabupaten_kota_nama'] ?? '',
             'captcha' => $captcha,
             'step' => 'verify'
@@ -191,7 +373,7 @@ class RegistrationController extends Controller
 
         if (!empty($errors)) {
             setFlash('error', implode('<br>', $errors));
-            
+
             // Tampilkan ulang form
             $namaSamaran = $this->maskName($hafiz['nama']);
             $captcha = generateCaptcha();
@@ -229,12 +411,13 @@ class RegistrationController extends Controller
             // Clear registration session
             unset($_SESSION['reg_nik'], $_SESSION['reg_hafiz_id'], $_SESSION['reg_step'], $_SESSION['reg_time']);
 
-            setFlash('success', 
+            setFlash(
+                'success',
                 '<strong>Pendaftaran berhasil!</strong><br><br>' .
-                'Nama: <b>' . htmlspecialchars($hafiz['nama']) . '</b><br>' .
-                'Username (No HP): <b>' . htmlspecialchars($telepon) . '</b><br><br>' .
-                '<span class="text-warning">⏳ Akun Anda sedang menunggu persetujuan admin kabupaten/kota.</span><br>' .
-                'Anda akan dapat login setelah admin memverifikasi dan mengaktifkan akun Anda.'
+                    'Nama: <b>' . htmlspecialchars($hafiz['nama']) . '</b><br>' .
+                    'Username (No HP): <b>' . htmlspecialchars($telepon) . '</b><br><br>' .
+                    '<span class="text-warning">⏳ Akun Anda sedang menunggu persetujuan admin kabupaten/kota.</span><br>' .
+                    'Anda akan dapat login setelah admin memverifikasi dan mengaktifkan akun Anda.'
             );
             $this->redirect(APP_URL . '/login');
         } catch (Exception $e) {
@@ -264,22 +447,31 @@ class RegistrationController extends Controller
     }
 
     /**
+     * Samarkan NIK: "3510211110760003" → "3510****0003"
+     */
+    private function maskNik(string $nik): string
+    {
+        if (strlen($nik) < 8) return str_repeat('*', strlen($nik));
+        return substr($nik, 0, 4) . str_repeat('*', strlen($nik) - 8) . substr($nik, -4);
+    }
+
+    /**
      * Parse tanggal dari input (YYYY-MM-DD atau DD/MM/YYYY)
      */
-    private function parseInputDate(string $input): ?string 
+    private function parseInputDate(string $input): ?string
     {
         $input = trim($input);
-        
+
         // Format YYYY-MM-DD (dari input type="date")
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $input)) {
             return $input;
         }
-        
+
         // Format DD/MM/YYYY
         if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $input, $m)) {
             return sprintf('%04d-%02d-%02d', $m[3], $m[2], $m[1]);
         }
-        
+
         return null;
     }
 }

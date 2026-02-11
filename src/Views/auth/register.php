@@ -7,7 +7,7 @@
 
     <div class="container position-relative" style="z-index: 1;">
         <div class="row justify-content-center">
-            <div class="col-md-8 col-lg-5">
+            <div class="col-md-8 col-lg-6">
 
                 <!-- Card -->
                 <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
@@ -17,19 +17,10 @@
                             <i class="bi bi-shield-check text-success" style="font-size: 2.5rem;"></i>
                         </div>
                         <h3 class="fw-bold text-dark mb-1">Klaim Akun Hafiz</h3>
-                        <p class="text-muted small">Masukkan NIK Anda untuk mengklaim akun</p>
+                        <p class="text-muted small mb-3">Pilih cara pendaftaran</p>
                     </div>
 
-                    <div class="card-body p-4 p-md-5">
-                        <!-- Info Box -->
-                        <div class="alert alert-info border-0 bg-info bg-opacity-10 rounded-3 mb-4" role="alert">
-                            <i class="bi bi-info-circle-fill text-info me-2"></i>
-                            <small>
-                                <strong>Langkah 1 dari 3:</strong> Masukkan NIK KTP Anda. 
-                                Hanya hafiz yang <u>sudah terdaftar dan lulus seleksi</u> yang dapat mengklaim akun.
-                            </small>
-                        </div>
-
+                    <div class="card-body p-4 p-md-5 pt-2">
                         <!-- Flash Message -->
                         <?php $flash = getFlash(); ?>
                         <?php if ($flash): ?>
@@ -39,43 +30,141 @@
                             </div>
                         <?php endif; ?>
 
-                        <form action="<?= APP_URL ?>/register/check-nik" method="POST" class="needs-validation" novalidate>
-                            <?= csrfField() ?>
+                        <!-- Tab Navigation -->
+                        <ul class="nav nav-pills nav-fill mb-4 gap-2" id="registerTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active rounded-pill d-flex align-items-center justify-content-center gap-2"
+                                    id="nik-tab" data-bs-toggle="pill" data-bs-target="#nik-panel"
+                                    type="button" role="tab" aria-controls="nik-panel" aria-selected="true">
+                                    <i class="bi bi-card-heading"></i>
+                                    <span>Cari NIK</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link rounded-pill d-flex align-items-center justify-content-center gap-2"
+                                    id="nama-tab" data-bs-toggle="pill" data-bs-target="#nama-panel"
+                                    type="button" role="tab" aria-controls="nama-panel" aria-selected="false">
+                                    <i class="bi bi-person-badge"></i>
+                                    <span>Cari Nama</span>
+                                </button>
+                            </li>
+                        </ul>
 
-                            <!-- NIK -->
-                            <div class="mb-4">
-                                <label for="nik" class="form-label fw-semibold text-secondary small text-uppercase">Nomor Induk Kependudukan (NIK)</label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-card-heading"></i></span>
-                                    <input type="text" class="form-control bg-light border-start-0 fs-5" id="nik" name="nik" 
-                                           maxlength="16" placeholder="16 digit sesuai KTP" required pattern="[0-9]{16}"
-                                           inputmode="numeric" autocomplete="off"
-                                           style="letter-spacing: 2px; font-family: 'Courier New', monospace;">
+                        <!-- Tab Content -->
+                        <div class="tab-content" id="registerTabContent">
+                            <!-- TAB 1: CARI NIK -->
+                            <div class="tab-pane fade show active" id="nik-panel" role="tabpanel" aria-labelledby="nik-tab">
+                                <!-- Info Box -->
+                                <div class="alert alert-info border-0 bg-info bg-opacity-10 rounded-3 mb-4" role="alert">
+                                    <i class="bi bi-info-circle-fill text-info me-2"></i>
+                                    <small>
+                                        <strong>Langkah 1 dari 3:</strong> Masukkan NIK KTP Anda (16 digit).
+                                        Hanya hafiz yang <u>sudah terdaftar</u> yang dapat mengklaim akun.
+                                    </small>
                                 </div>
-                                <div class="form-text small mt-2">
-                                    <i class="bi bi-lock-fill text-muted me-1"></i>
-                                    NIK Anda aman dan terenkripsi.
-                                </div>
-                            </div>
 
-                            <!-- Captcha Security -->
-                            <div class="mb-4">
-                                <div class="p-3 bg-opacity-10 bg-success rounded-3 border border-success border-opacity-25">
-                                    <label class="form-label fw-bold text-success small mb-2"><i class="bi bi-shield-lock me-1"></i>VERIFIKASI KEAMANAN</label>
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="bg-white px-3 py-2 rounded border fw-bold text-dark user-select-none fs-5">
-                                            <?= $captcha['question'] ?> = ?
+                                <form action="<?= APP_URL ?>/register/check-nik" method="POST" class="needs-validation" novalidate>
+                                    <?= csrfField() ?>
+
+                                    <!-- NIK -->
+                                    <div class="mb-4">
+                                        <label for="nik" class="form-label fw-semibold text-secondary small text-uppercase">Nomor Induk Kependudukan (NIK)</label>
+                                        <div class="input-group input-group-lg">
+                                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-card-heading"></i></span>
+                                            <input type="text" class="form-control bg-light border-start-0 fs-5" id="nik" name="nik"
+                                                maxlength="16" placeholder="16 digit sesuai KTP" required pattern="[0-9]{16}"
+                                                inputmode="numeric" autocomplete="off"
+                                                style="letter-spacing: 2px; font-family: 'Courier New', monospace;">
                                         </div>
-                                        <input type="number" class="form-control" name="captcha" placeholder="Jawaban..." required style="max-width: 150px;">
+                                        <div class="form-text small mt-2">
+                                            <i class="bi bi-lock-fill text-muted me-1"></i>
+                                            NIK Anda aman dan terenkripsi.
+                                        </div>
                                     </div>
-                                </div>
+
+                                    <!-- Captcha Security -->
+                                    <div class="mb-4">
+                                        <div class="p-3 bg-opacity-10 bg-success rounded-3 border border-success border-opacity-25">
+                                            <label class="form-label fw-bold text-success small mb-2"><i class="bi bi-shield-lock me-1"></i>VERIFIKASI KEAMANAN</label>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="bg-white px-3 py-2 rounded border fw-bold text-dark user-select-none fs-5">
+                                                    <?= $captcha['question'] ?> = ?
+                                                </div>
+                                                <input type="number" class="form-control" name="captcha" placeholder="Jawaban..." required style="max-width: 150px;">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Submit Button -->
+                                    <button type="submit" class="btn btn-success w-100 py-3 fw-bold rounded-3 shadow-sm transition-hover fs-5">
+                                        CARI DATA SAYA <i class="bi bi-search ms-2"></i>
+                                    </button>
+                                </form>
                             </div>
 
-                            <!-- Submit Button -->
-                            <button type="submit" class="btn btn-success w-100 py-3 fw-bold rounded-3 shadow-sm transition-hover fs-5">
-                                CARI DATA SAYA <i class="bi bi-search ms-2"></i>
-                            </button>
-                        </form>
+                            <!-- TAB 2: CARI NAMA -->
+                            <div class="tab-pane fade" id="nama-panel" role="tabpanel" aria-labelledby="nama-tab">
+                                <!-- Info Box -->
+                                <div class="alert alert-warning border-0 bg-warning bg-opacity-10 rounded-3 mb-4" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                                    <small>
+                                        <strong>Pendaftaran Alternatif:</strong> Gunakan pencarian ini jika NIK Anda
+                                        <u>tidak terdaftar</u> atau <u>tidak sesuai format 16 digit</u>.
+                                        Masukkan nama dan kabupaten/kota Anda.
+                                    </small>
+                                </div>
+
+                                <form action="<?= APP_URL ?>/register/check-nama" method="POST" class="needs-validation" novalidate>
+                                    <?= csrfField() ?>
+
+                                    <!-- Nama -->
+                                    <div class="mb-4">
+                                        <label for="nama_cari" class="form-label fw-semibold text-secondary small text-uppercase">Nama Lengkap</label>
+                                        <div class="input-group input-group-lg">
+                                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person"></i></span>
+                                            <input type="text" class="form-control bg-light border-start-0" id="nama_cari" name="nama_cari"
+                                                placeholder="Nama sesuai data terdaftar" required minlength="3"
+                                                autocomplete="off">
+                                        </div>
+                                        <div class="form-text small mt-2">
+                                            <i class="bi bi-info-circle text-muted me-1"></i>
+                                            Masukkan nama lengkap atau sebagian nama Anda.
+                                        </div>
+                                    </div>
+
+                                    <!-- Kabupaten/Kota -->
+                                    <div class="mb-4">
+                                        <label for="kabko_id" class="form-label fw-semibold text-secondary small text-uppercase">Kabupaten/Kota</label>
+                                        <select class="form-select form-select-lg bg-light" id="kabko_id" name="kabko_id" required>
+                                            <option value="">-- Pilih Kabupaten/Kota --</option>
+                                            <?php if (!empty($kabko_list)): ?>
+                                                <?php foreach ($kabko_list as $kk): ?>
+                                                    <option value="<?= $kk['id'] ?>"><?= htmlspecialchars($kk['nama']) ?></option>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
+                                        </select>
+                                    </div>
+
+                                    <!-- Captcha Security -->
+                                    <div class="mb-4">
+                                        <div class="p-3 bg-opacity-10 bg-success rounded-3 border border-success border-opacity-25">
+                                            <label class="form-label fw-bold text-success small mb-2"><i class="bi bi-shield-lock me-1"></i>VERIFIKASI KEAMANAN</label>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="bg-white px-3 py-2 rounded border fw-bold text-dark user-select-none fs-5">
+                                                    <?= $captcha['question'] ?> = ?
+                                                </div>
+                                                <input type="number" class="form-control" name="captcha" placeholder="Jawaban..." required style="max-width: 150px;">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Submit Button -->
+                                    <button type="submit" class="btn btn-warning w-100 py-3 fw-bold rounded-3 shadow-sm transition-hover fs-5 text-dark">
+                                        CARI DATA SAYA <i class="bi bi-search ms-2"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="card-footer bg-light p-4 text-center border-top-0">
@@ -115,5 +204,24 @@
     input:-webkit-autofill:focus,
     input:-webkit-autofill:active {
         -webkit-box-shadow: 0 0 0 30px #f8f9fa inset !important;
+    }
+
+    .nav-pills .nav-link {
+        color: #6c757d;
+        font-weight: 600;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+
+    .nav-pills .nav-link.active {
+        background-color: #198754;
+        color: white;
+        border-color: #198754;
+    }
+
+    .nav-pills .nav-link:not(.active):hover {
+        background-color: #f8f9fa;
+        border-color: #198754;
+        color: #198754;
     }
 </style>

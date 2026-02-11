@@ -165,7 +165,7 @@ function setRememberMe(int $userId): void
         'expires' => $expiry,
         'path' => '/',
         'domain' => '',
-        'secure' => false, // Set true if using HTTPS
+        'secure' => (defined('APP_ENV') && APP_ENV === 'production'),
         'httponly' => true,
         'samesite' => 'Lax'
     ]);

@@ -16,3 +16,7 @@ Thumbs.db
 *.xlsx
 *.zip
 deploy.log
+
+# Generated files (large)
+config/import_data_huffaz.sql
+config/nik_issues_log.txt

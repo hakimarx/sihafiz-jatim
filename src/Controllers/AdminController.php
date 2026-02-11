@@ -895,4 +895,54 @@ class AdminController extends Controller
 
         $this->redirect(APP_URL . '/admin/pending');
     }
+
+    /**
+     * Batch approve multiple pending users
+     */
+    public function batchApprove(): void
+    {
+        if (!$this->isPost() || !$this->validateCsrf()) {
+            setFlash('error', 'Request tidak valid.');
+            $this->redirect(APP_URL . '/admin/pending');
+            return;
+        }
+
+        $userIds = $this->input('user_ids');
+        if (empty($userIds) || !is_array($userIds)) {
+            setFlash('error', 'Pilih minimal satu pendaftaran.');
+            $this->redirect(APP_URL . '/admin/pending');
+            return;
+        }
+
+        $kabkoId = null;
+        if (hasRole(ROLE_ADMIN_KABKO)) {
+            $admin = User::findById(getCurrentUserId());
+            $kabkoId = $admin['kabupaten_kota_id'];
+        }
+
+        $successCount = 0;
+        foreach ($userIds as $id) {
+            $userId = (int) $id;
+            $user = User::findById($userId);
+
+            if ($user && $user['is_active'] == 0) {
+                // Check authorization for kabko admin
+                if ($kabkoId && $user['kabupaten_kota_id'] != $kabkoId) {
+                    continue;
+                }
+
+                if (User::update($userId, ['is_active' => 1])) {
+                    $successCount++;
+                }
+            }
+        }
+
+        if ($successCount > 0) {
+            setFlash('success', "Berhasil mengaktifkan <strong>$successCount</strong> akun pendaftaran.");
+        } else {
+            setFlash('error', 'Gagal mengaktifkan akun pendaftaran.');
+        }
+
+        $this->redirect(APP_URL . '/admin/pending');
+    }
 }
