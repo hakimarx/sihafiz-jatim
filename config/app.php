@@ -104,3 +104,10 @@ if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.use_strict_mode', 1);
     session_start();
 }
+
+// ============================================
+// GOOGLE OAUTH CONFIGURATION
+// ============================================
+define('GOOGLE_CLIENT_ID', getenv('GOOGLE_CLIENT_ID') ?: '');
+define('GOOGLE_CLIENT_SECRET', getenv('GOOGLE_CLIENT_SECRET') ?: '');
+define('GOOGLE_REDIRECT_URI', APP_URL . '/login/google/callback');

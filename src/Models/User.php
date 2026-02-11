@@ -60,6 +60,28 @@ class User
     }
 
     /**
+     * Find user by Google ID
+     */
+    public static function findByGoogleId(string $googleId): ?array
+    {
+        return Database::queryOne(
+            "SELECT * FROM users WHERE google_id = :google_id AND is_active = 1",
+            ['google_id' => $googleId]
+        );
+    }
+
+    /**
+     * Find user by Email (active only)
+     */
+    public static function findByEmail(string $email): ?array
+    {
+        return Database::queryOne(
+            "SELECT * FROM users WHERE email = :email AND is_active = 1",
+            ['email' => $email]
+        );
+    }
+
+    /**
      * Find user by ID
      */
     public static function findById(int $id): ?array
@@ -264,6 +286,17 @@ class User
 
         $sql = "UPDATE users SET " . implode(", ", $fields) . " WHERE id = :id";
         return Database::execute($sql, $params);
+    }
+
+    /**
+     * Update Google ID for a user
+     */
+    public static function updateGoogleId(int $userId, string $googleId): bool
+    {
+        return Database::execute(
+            "UPDATE users SET google_id = :google_id WHERE id = :id",
+            ['id' => $userId, 'google_id' => $googleId]
+        ) > 0;
     }
 
     /**

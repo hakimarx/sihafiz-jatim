@@ -422,7 +422,7 @@ class AdminController extends Controller
         $kabkoList = KabupatenKota::getForDropdown();
 
         $this->view('admin.user-list', [
-            'title' => 'Manajemen User - ' . APP_NAME,
+            'title' => 'Manajemen Admin & Penguji - ' . APP_NAME,
             'users' => $result['data'],
             'pagination' => $result,
             'filters' => $filters,
@@ -440,7 +440,7 @@ class AdminController extends Controller
         $kabkoList = KabupatenKota::getForDropdown();
 
         $this->view('admin.user-form', [
-            'title' => 'Tambah User - ' . APP_NAME,
+            'title' => 'Tambah Admin / Penguji - ' . APP_NAME,
             'user' => null,
             'kabkoList' => $kabkoList,
             'isEdit' => false,
@@ -503,7 +503,7 @@ class AdminController extends Controller
         $kabkoList = KabupatenKota::getForDropdown();
 
         $this->view('admin.user-form', [
-            'title' => 'Edit User - ' . APP_NAME,
+            'title' => 'Edit Admin / Penguji - ' . APP_NAME,
             'user' => $user,
             'kabkoList' => $kabkoList,
             'isEdit' => true,

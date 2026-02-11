@@ -23,6 +23,7 @@ require_once __DIR__ . '/../config/security.php';
 require_once __DIR__ . '/../src/Core/Router.php';
 require_once __DIR__ . '/../src/Core/ImageProcessor.php';
 require_once __DIR__ . '/../src/Core/Controller.php';
+require_once __DIR__ . '/../src/Core/GoogleAuth.php';
 
 // ============================================
 // LOAD MODELS
@@ -48,6 +49,7 @@ require_once __DIR__ . '/../src/Controllers/HafizController.php';
 require_once __DIR__ . '/../src/Controllers/SeleksiController.php';
 require_once __DIR__ . '/../src/Controllers/RegistrationController.php';
 require_once __DIR__ . '/../src/Controllers/ProfileController.php';
+require_once __DIR__ . '/../src/Controllers/ReportController.php';
 
 // ============================================
 // INITIALIZE SESSION FROM COOKIE
@@ -84,6 +86,10 @@ $router->post('/login', function () {
     (new AuthController())->login();
 });
 $router->get('/logout', [AuthController::class, 'logout']);
+
+// Google SSO Routes
+$router->get('/login/google', [AuthController::class, 'loginWithGoogle']);
+$router->get('/login/google/callback', [AuthController::class, 'googleCallback']);
 
 // Profile Routes (All Roles)
 $router->get('/profile', [ProfileController::class, 'index']);
@@ -139,6 +145,12 @@ $router->get('/hafiz/profil/edit', [HafizController::class, 'profilEdit']);
 $router->post('/hafiz/profil/update', [HafizController::class, 'profilUpdate']);
 $router->get('/hafiz/password', [HafizController::class, 'passwordEdit']);
 $router->post('/hafiz/password/update', [HafizController::class, 'passwordUpdate']);
+
+// Report / Cetak Laporan Routes
+$router->get('/admin/reports', [ReportController::class, 'index']);
+$router->get('/admin/reports/print/harian', [ReportController::class, 'printHarian']);
+$router->get('/admin/reports/print/hafiz', [ReportController::class, 'printHafiz']);
+$router->get('/admin/reports/print/absensi', [ReportController::class, 'printAbsensi']);
 
 // Seleksi Routes
 $router->get('/seleksi', [SeleksiController::class, 'index']);

@@ -185,6 +185,11 @@
                                         <?php endif; ?>
                                     </a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link <?= strpos($currentUri, '/admin/reports') !== false ? 'active' : '' ?>" href="<?= APP_URL ?>/admin/reports">
+                                        <i class="bi bi-printer"></i> Cetak Laporan
+                                    </a>
+                                </li>
                             <?php endif; ?>
 
                             <?php if ($role === ROLE_ADMIN_PROV || $role === ROLE_ADMIN_KABKO || $role === ROLE_PENGUJI): ?>

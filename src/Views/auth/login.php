@@ -80,6 +80,14 @@
                             <button type="submit" class="btn btn-success w-100 py-2">
                                 <i class="bi bi-box-arrow-in-right me-2"></i>Masuk
                             </button>
+
+                            <div class="text-center my-3">
+                                <span class="text-muted small">atau</span>
+                            </div>
+
+                            <a href="<?= APP_URL ?>/login/google" class="btn btn-outline-danger w-100 py-2">
+                                <i class="bi bi-google me-2"></i>Masuk dengan Google
+                            </a>
                         </form>
 
                         <div class="text-center mt-3">
