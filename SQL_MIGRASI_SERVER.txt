@@ -1,0 +1,37 @@
+-- 1. Membuat tabel riwayat mengajar (Aman jika sudah ada)
+CREATE TABLE IF NOT EXISTS `hafiz_mengajar` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `hafiz_id` int(11) NOT NULL,
+  `tempat_mengajar` varchar(255) NOT NULL,
+  `tmt_mengajar` date NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_hafiz` (`hafiz_id`),
+  CONSTRAINT `fk_mengajar_hafiz` FOREIGN KEY (`hafiz_id`) REFERENCES `hafiz` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 2. Prosedur untuk menambah kolom secara aman (hanya jika belum ada)
+DROP PROCEDURE IF EXISTS TambahKolomAman;
+DELIMITER //
+CREATE PROCEDURE TambahKolomAman()
+BEGIN
+    -- Cek & Tambah foto_profil
+    IF NOT EXISTS (SELECT * FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='hafiz' AND column_name='foto_profil') THEN
+        ALTER TABLE `hafiz` ADD COLUMN `foto_profil` VARCHAR(255) DEFAULT NULL;
+    END IF;
+
+    -- Cek & Tambah foto_ktp
+    IF NOT EXISTS (SELECT * FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='hafiz' AND column_name='foto_ktp') THEN
+        ALTER TABLE `hafiz` ADD COLUMN `foto_ktp` VARCHAR(255) DEFAULT NULL;
+    END IF;
+
+    -- Cek & Tambah remember_token
+    IF NOT EXISTS (SELECT * FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='users' AND column_name='remember_token') THEN
+        ALTER TABLE `users` ADD COLUMN `remember_token` VARCHAR(255) DEFAULT NULL;
+    END IF;
+END //
+DELIMITER ;
+
+-- Jalankan prosedur lalu hapus kembali
+CALL TambahKolomAman();
+DROP PROCEDURE IF EXISTS TambahKolomAman;
