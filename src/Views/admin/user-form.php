@@ -22,8 +22,27 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Password <?= $isEdit ? '(Kosongkan jika tidak diubah)' : '' ?></label>
-                            <input type="password" class="form-control" name="password" <?= $isEdit ? '' : 'required' ?>>
+                            <div class="input-group">
+                                <input type="password" class="form-control" name="password" id="password_input" <?= $isEdit ? '' : 'required' ?>>
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordForm()">
+                                    <i class="bi bi-eye" id="toggleIconForm"></i>
+                                </button>
+                            </div>
                         </div>
+
+                        <script>
+                            function togglePasswordForm() {
+                                const pass = document.getElementById('password_input');
+                                const icon = document.getElementById('toggleIconForm');
+                                if (pass.type === 'password') {
+                                    pass.type = 'text';
+                                    icon.classList.replace('bi-eye', 'bi-eye-slash');
+                                } else {
+                                    pass.type = 'password';
+                                    icon.classList.replace('bi-eye-slash', 'bi-eye');
+                                }
+                            }
+                        </script>
 
                         <div class="col-md-12">
                             <label class="form-label">Nama Lengkap</label>

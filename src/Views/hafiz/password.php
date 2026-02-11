@@ -24,14 +24,38 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Password Baru</label>
-                        <input type="password" class="form-control" name="new_password" required placeholder="Minimal 6 karakter" id="new_pw">
+                        <div class="input-group">
+                            <input type="password" class="form-control" name="new_password" required placeholder="Minimal 6 karakter" id="new_pw">
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePw('new_pw', 'eye_new')">
+                                <i class="bi bi-eye" id="eye_new"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Konfirmasi Password Baru</label>
-                        <input type="password" class="form-control" name="confirm_password" required placeholder="Ulangi password baru" id="confirm_pw">
+                        <div class="input-group">
+                            <input type="password" class="form-control" name="confirm_password" required placeholder="Ulangi password baru" id="confirm_pw">
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePw('confirm_pw', 'eye_conf')">
+                                <i class="bi bi-eye" id="eye_conf"></i>
+                            </button>
+                        </div>
                         <div id="pw_error" class="text-danger small mt-1" style="display:none;">Password tidak cocok!</div>
                     </div>
+
+                    <script>
+                        function togglePw(id, iconId) {
+                            const pass = document.getElementById(id);
+                            const icon = document.getElementById(iconId);
+                            if (pass.type === 'password') {
+                                pass.type = 'text';
+                                icon.classList.replace('bi-eye', 'bi-eye-slash');
+                            } else {
+                                pass.type = 'password';
+                                icon.classList.replace('bi-eye-slash', 'bi-eye');
+                            }
+                        }
+                    </script>
 
                     <div class="d-flex justify-content-between mt-4 pt-3 border-top">
                         <a href="<?= APP_URL ?>/hafiz/profil" class="btn btn-outline-secondary">Batal</a>
