@@ -49,7 +49,7 @@ class Seleksi
         $params = [];
 
         if (!empty($filters['tahun_anggaran'])) {
-            $where[] = "s.tahun_anggaran = :tahun";
+            $where[] = "h.tahun_tes = :tahun";
             $params['tahun'] = $filters['tahun_anggaran'];
         }
 

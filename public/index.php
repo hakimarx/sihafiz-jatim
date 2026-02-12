@@ -24,6 +24,7 @@ require_once __DIR__ . '/../src/Core/Router.php';
 require_once __DIR__ . '/../src/Core/ImageProcessor.php';
 require_once __DIR__ . '/../src/Core/Controller.php';
 require_once __DIR__ . '/../src/Core/GoogleAuth.php';
+require_once __DIR__ . '/../src/Core/Mailer.php';
 
 // ============================================
 // LOAD MODELS
@@ -34,6 +35,8 @@ require_once __DIR__ . '/../src/Models/LaporanHarian.php';
 require_once __DIR__ . '/../src/Models/KabupatenKota.php';
 require_once __DIR__ . '/../src/Models/Seleksi.php';
 require_once __DIR__ . '/../src/Models/Setting.php';
+require_once __DIR__ . '/../src/Models/Mutasi.php';
+require_once __DIR__ . '/../src/Models/PasswordReset.php';
 
 // ============================================
 // LOAD CORE UTILITIES
@@ -50,6 +53,7 @@ require_once __DIR__ . '/../src/Controllers/SeleksiController.php';
 require_once __DIR__ . '/../src/Controllers/RegistrationController.php';
 require_once __DIR__ . '/../src/Controllers/ProfileController.php';
 require_once __DIR__ . '/../src/Controllers/ReportController.php';
+require_once __DIR__ . '/../src/Controllers/MutasiController.php';
 
 // ============================================
 // INITIALIZE SESSION FROM COOKIE
@@ -91,6 +95,16 @@ $router->get('/logout', [AuthController::class, 'logout']);
 $router->get('/login/google', [AuthController::class, 'loginWithGoogle']);
 $router->get('/login/google/callback', [AuthController::class, 'googleCallback']);
 
+// Forgot/Reset Password Routes
+$router->get('/forgot-password', [AuthController::class, 'forgotPasswordForm']);
+$router->post('/forgot-password', function () {
+    (new AuthController())->forgotPasswordSubmit();
+});
+$router->get('/reset-password', [AuthController::class, 'resetPasswordForm']);
+$router->post('/reset-password', function () {
+    (new AuthController())->resetPasswordSubmit();
+});
+
 // Profile Routes (All Roles)
 $router->get('/profile', [ProfileController::class, 'index']);
 $router->post('/profile/update', [ProfileController::class, 'update']);
@@ -111,6 +125,7 @@ $router->post('/admin/hafiz', [AdminController::class, 'hafizStore']);
 $router->get('/admin/hafiz/{id}/edit', [AdminController::class, 'hafizEdit']);
 $router->post('/admin/hafiz/{id}/update', [AdminController::class, 'hafizUpdate']);
 $router->post('/admin/hafiz/{id}/delete', [AdminController::class, 'hafizDelete']);
+$router->post('/admin/hafiz/{id}/mark-deceased', [AdminController::class, 'hafizMarkDeceased']);
 $router->get('/admin/laporan', [AdminController::class, 'laporanList']);
 $router->post('/admin/laporan/{id}/verify', [AdminController::class, 'laporanVerify']);
 
@@ -132,6 +147,13 @@ $router->get('/admin/pending', [AdminController::class, 'pendingApproval']);
 $router->post('/admin/pending/{id}/approve', [AdminController::class, 'approveUser']);
 $router->post('/admin/pending/batch-approve', [AdminController::class, 'batchApprove']);
 $router->post('/admin/pending/{id}/reject', [AdminController::class, 'rejectUser']);
+
+// Mutasi Hafiz Routes
+$router->get('/admin/mutasi', [MutasiController::class, 'index']);
+$router->get('/admin/mutasi/create', [MutasiController::class, 'create']);
+$router->post('/admin/mutasi/store', [MutasiController::class, 'store']);
+$router->get('/admin/mutasi/{id}/approve', [MutasiController::class, 'approve']);
+$router->get('/admin/mutasi/{id}/reject', [MutasiController::class, 'reject']);
 
 // Hafiz Routes
 $router->get('/hafiz/dashboard', [HafizController::class, 'dashboard']);

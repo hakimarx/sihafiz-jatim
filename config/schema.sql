@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS `hafiz` (
     `email` VARCHAR(255) DEFAULT NULL,
     `nama_bank` VARCHAR(100) DEFAULT NULL,
     `nomor_rekening` VARCHAR(50) DEFAULT NULL,
-    `sertifikat_tahfidz` VARCHAR(255) DEFAULT NULL COMMENT 'Jumlah Juz',
+    `sertifikat_tahfidz` VARCHAR(255) DEFAULT NULL COMMENT 'Lembaga yang mengeluarkan sertifikat tahfidz',
     `mengajar` TINYINT(1) DEFAULT 0,
     `tmt_mengajar` DATE DEFAULT NULL,
     `tempat_mengajar` VARCHAR(255) DEFAULT NULL,
@@ -106,6 +106,7 @@ CREATE TABLE IF NOT EXISTS `hafiz` (
     `tanggal_lulus` DATE DEFAULT NULL,
     `status_insentif` ENUM('aktif', 'tidak_aktif', 'suspend') DEFAULT 'tidak_aktif',
     `keterangan` TEXT DEFAULT NULL,
+    `status_data` ENUM('valid', 'perlu_perbaikan') DEFAULT 'valid' COMMENT 'Status kualitas data',
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `is_aktif` TINYINT(1) DEFAULT 1,
@@ -267,6 +268,20 @@ CREATE TABLE IF NOT EXISTS `hafiz_mengajar` (
     KEY `idx_hafiz` (`hafiz_id`),
     CONSTRAINT `fk_mengajar_hafiz` FOREIGN KEY (`hafiz_id`) 
         REFERENCES `hafiz` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- PASSWORD RESETS
+-- ============================================
+CREATE TABLE IF NOT EXISTS `password_resets` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `email` VARCHAR(255) NOT NULL,
+    `token` VARCHAR(255) NOT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `is_used` TINYINT(1) DEFAULT 0,
+    PRIMARY KEY (`id`),
+    KEY `idx_email` (`email`),
+    KEY `idx_token` (`token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 COMMIT;

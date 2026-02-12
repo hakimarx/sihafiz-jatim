@@ -65,6 +65,16 @@ class AuthController extends Controller
         // Authenticate
         $user = User::authenticate($username, $password);
 
+        if (!$user) {
+            // Check if this is a NIK trying to login for the first time (Klaim NIK)
+            $hafiz = Hafiz::findByNik($username);
+            if ($hafiz && empty($hafiz['user_id'])) {
+                setFlash('info', 'Data NIK <b>' . $username . '</b> ditemukan. Silakan lakukan <b>Aktivasi Akun</b> terlebih dahulu.');
+                $this->redirect(APP_URL . '/register?nik=' . $username);
+                return;
+            }
+        }
+
         if ($user) {
             // Check if this is a pending account
             if (isset($user['pending']) && $user['pending'] === true) {
@@ -110,6 +120,123 @@ class AuthController extends Controller
         logout();
         setFlash('success', 'Anda telah berhasil logout.');
         $this->redirect(APP_URL . '/login');
+    }
+
+    /**
+     * Tampilkan form lupa password
+     */
+    public function forgotPasswordForm(): void
+    {
+        if (isLoggedIn()) {
+            $this->redirectToDashboard();
+            return;
+        }
+
+        $this->view('auth.forgot-password', [
+            'title' => 'Lupa Password - ' . APP_NAME
+        ]);
+    }
+
+    /**
+     * Proses kirim email lupa password
+     */
+    public function forgotPasswordSubmit(): void
+    {
+        if (!$this->isPost() || !$this->validateCsrf()) {
+            $this->redirect(APP_URL . '/forgot-password');
+            return;
+        }
+
+        $email = trim($this->input('email'));
+
+        if (empty($email)) {
+            setFlash('error', 'Silakan masukkan email Anda.');
+            $this->redirect(APP_URL . '/forgot-password');
+            return;
+        }
+
+        $user = User::findByEmail($email);
+
+        if ($user) {
+            $token = bin2hex(random_bytes(32));
+            PasswordReset::create($email, $token);
+
+            if (Mailer::sendResetPassword($email, $token)) {
+                setFlash('success', 'Instruksi reset password telah dikirim ke email Anda.');
+            } else {
+                setFlash('error', 'Gagal mengirim email. Silakan coba lagi nanti.');
+            }
+        } else {
+            // Kita tetap tampilkan pesan sukses demi keamanan agar orang tidak menebak email
+            setFlash('success', 'Jika email tersebut terdaftar, instruksi reset password telah dikirim.');
+        }
+
+        $this->redirect(APP_URL . '/forgot-password');
+    }
+
+    /**
+     * Tampilkan form reset password
+     */
+    public function resetPasswordForm(): void
+    {
+        $token = $_GET['token'] ?? '';
+        $reset = PasswordReset::findToken($token);
+
+        if (!$reset) {
+            setFlash('error', 'Link reset password tidak valid atau sudah kadaluarsa.');
+            $this->redirect(APP_URL . '/forgot-password');
+            return;
+        }
+
+        $this->view('auth.reset-password', [
+            'title' => 'Reset Password - ' . APP_NAME,
+            'token' => $token
+        ]);
+    }
+
+    /**
+     * Proses update password baru
+     */
+    public function resetPasswordSubmit(): void
+    {
+        if (!$this->isPost() || !$this->validateCsrf()) {
+            $this->redirect(APP_URL . '/login');
+            return;
+        }
+
+        $token = $this->input('token');
+        $password = $this->input('password');
+        $confirm = $this->input('confirm_password');
+
+        $reset = PasswordReset::findToken($token);
+        if (!$reset) {
+            setFlash('error', 'Permintaan reset tidak valid.');
+            $this->redirect(APP_URL . '/forgot-password');
+            return;
+        }
+
+        if (empty($password) || strlen($password) < 6) {
+            setFlash('error', 'Password minimal 6 karakter.');
+            $this->redirect(APP_URL . '/reset-password?token=' . $token);
+            return;
+        }
+
+        if ($password !== $confirm) {
+            setFlash('error', 'Konfirmasi password tidak cocok.');
+            $this->redirect(APP_URL . '/reset-password?token=' . $token);
+            return;
+        }
+
+        $user = User::findByEmail($reset['email']);
+        if ($user) {
+            User::updatePassword((int)$user['id'], $password);
+            PasswordReset::markAsUsed($token);
+            setFlash('success', 'Password Anda berhasil diperbarui. Silakan login.');
+            $this->redirect(APP_URL . '/login');
+        } else {
+            setFlash('error', 'Gagal mereset password.');
+            $this->redirect(APP_URL . '/forgot-password');
+        }
     }
 
     /**

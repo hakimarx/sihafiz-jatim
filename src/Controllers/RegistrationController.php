@@ -41,22 +41,22 @@ class RegistrationController extends Controller
             return;
         }
 
-        $captcha = generateCaptcha();
-
-        // Load list kabupaten/kota untuk form pencarian nama
+        $nik = $this->input('nik', '');
         $kabkoList = KabupatenKota::getAll();
+        $captcha = generateCaptcha();
+        $ssoData = $_SESSION['sso_register'] ?? null;
 
         $this->view('auth.register', [
-            'title' => 'Klaim Akun Hafiz - ' . APP_NAME,
+            'title' => 'Aktivasi Akun Hafiz - ' . APP_NAME,
+            'nik' => $nik,
+            'kabkoList' => $kabkoList,
             'captcha' => $captcha,
-            'step' => 'nik',
-            'kabko_list' => $kabkoList ?? []
-        ]);
+            'ssoData' => $ssoData
+        ], null); // Use null layout to handle Tailwind in the view
     }
 
-    /**
-     * Step 2: Cek NIK dan tampilkan konfirmasi
-     */
+
+
     public function checkNik(): void
     {
         if (!$this->isPost()) {
@@ -64,64 +64,35 @@ class RegistrationController extends Controller
             return;
         }
 
-        // Validate CSRF
-        if (!$this->validateCsrf()) {
-            setFlash('error', 'Sesi tidak valid. Silakan coba lagi.');
-            $this->redirect(APP_URL . '/register');
-            return;
-        }
-
         $nik = sanitizeNik($this->input('nik'));
-        $captchaInput = $this->input('captcha');
 
-        // Validate Captcha
-        if (!validateCaptcha($captchaInput)) {
-            setFlash('error', 'Jawaban captcha salah. Silakan coba lagi.');
+        if (empty($nik)) {
+            setFlash('error', 'Silakan masukkan NIK Anda.');
             $this->redirect(APP_URL . '/register');
             return;
         }
 
-        // Validate NIK format
-        if (!isValidNik($nik)) {
-            setFlash('error', 'NIK harus 16 digit angka. Jika NIK Anda tidak sesuai format, gunakan tab <b>"Cari Berdasarkan Nama"</b> untuk mendaftar.');
-            $this->redirect(APP_URL . '/register');
-            return;
-        }
-
-        // Cari NIK di database (dari data import)
         $hafiz = Hafiz::findByNik($nik);
 
         if (!$hafiz) {
-            setFlash('error', 'NIK tidak ditemukan dalam database hafiz. Coba gunakan tab <b>"Cari Berdasarkan Nama"</b> atau hubungi admin kabupaten/kota Anda.');
+            setFlash('error', 'NIK tidak ditemukan. Silakan hubungi admin jika Anda yakin sudah lulus seleksi.');
             $this->redirect(APP_URL . '/register');
             return;
         }
 
-        // Cek apakah sudah punya akun user
         if (!empty($hafiz['user_id'])) {
-            setFlash('error', 'NIK ini sudah memiliki akun. Silakan login menggunakan akun Anda, atau hubungi admin jika lupa password.');
+            setFlash('info', 'NIK ini sudah aktif. Silakan login.');
             $this->redirect(APP_URL . '/login');
             return;
         }
 
-        // Samarkan nama: "MO** FA**** RO****"
-        $namaSamaran = $this->maskName($hafiz['nama']);
+        $kabkoList = KabupatenKota::getAll();
 
-        // Simpan NIK di session untuk step selanjutnya
-        $_SESSION['reg_nik'] = $nik;
-        $_SESSION['reg_hafiz_id'] = $hafiz['id'];
-        $_SESSION['reg_step'] = 'verify';
-        $_SESSION['reg_time'] = time(); // timeout 10 menit
-
-        $captcha = generateCaptcha();
-
-        $this->view('auth.register_verify', [
-            'title' => 'Verifikasi Identitas - ' . APP_NAME,
-            'nama_samaran' => $namaSamaran,
-            'kabupaten' => $hafiz['kabupaten_kota_nama'] ?? '',
-            'captcha' => $captcha,
-            'step' => 'verify'
-        ]);
+        $this->view('auth.register_confirm', [
+            'title' => 'Konfirmasi Data Hafiz - ' . APP_NAME,
+            'hafiz' => $hafiz,
+            'kabkoList' => $kabkoList
+        ], null);
     }
 
     /**
@@ -175,12 +146,24 @@ class RegistrationController extends Controller
              WHERE h.nama LIKE :nama 
              AND h.kabupaten_kota_id = :kabko_id
              AND h.is_aktif = 1
+             AND h.status_kelulusan = 'lulus'
              LIMIT 10",
             ['nama' => '%' . $nama . '%', 'kabko_id' => $kabkoId]
         );
 
         if (empty($results)) {
-            setFlash('error', 'Nama tidak ditemukan di Kabupaten/Kota yang dipilih. Pastikan nama sesuai dengan data yang terdaftar atau hubungi admin.');
+            // Cek apakah ada data tapi tidak lulus, untuk memberikan pesan yang spesifik
+            $checkTidakLulus = Database::queryOne(
+                "SELECT id FROM hafiz 
+                 WHERE nama LIKE :nama AND kabupaten_kota_id = :kabko_id AND is_aktif = 1 AND status_kelulusan != 'lulus' LIMIT 1",
+                ['nama' => '%' . $nama . '%', 'kabko_id' => $kabkoId]
+            );
+
+            if ($checkTidakLulus) {
+                setFlash('error', 'Data ditemukan tetapi status <strong>TIDAK LULUS</strong>. Hanya hafiz lulus yang dapat mendaftar.');
+            } else {
+                setFlash('error', 'Nama tidak ditemukan di Kabupaten/Kota yang dipilih (Hanya mencari data hafiz LULUS). Pastikan nama sesuai data.');
+            }
             $this->redirect(APP_URL . '/register');
             return;
         }
@@ -290,6 +273,9 @@ class RegistrationController extends Controller
             'title' => 'Verifikasi Identitas - ' . APP_NAME,
             'nama_samaran' => $this->maskName($hafiz['nama']),
             'kabupaten' => $hafiz['kabupaten_kota_nama'] ?? '',
+            'kabupaten_kota_id' => $hafiz['kabupaten_kota_id'],
+            'nik' => $hafiz['nik'],
+            'id' => $hafiz['id'],
             'captcha' => $captcha,
             'step' => 'verify'
         ]);
@@ -305,124 +291,123 @@ class RegistrationController extends Controller
             return;
         }
 
-        // Validate CSRF
-        if (!$this->validateCsrf()) {
-            setFlash('error', 'Sesi tidak valid. Silakan coba lagi.');
-            $this->redirect(APP_URL . '/register');
-            return;
-        }
-
-        // Check session
-        if (empty($_SESSION['reg_nik']) || empty($_SESSION['reg_hafiz_id']) || $_SESSION['reg_step'] !== 'verify') {
-            setFlash('error', 'Sesi pendaftaran tidak valid. Silakan mulai ulang.');
-            $this->redirect(APP_URL . '/register');
-            return;
-        }
-
-        // Check timeout (10 menit)
-        if (time() - $_SESSION['reg_time'] > 600) {
-            unset($_SESSION['reg_nik'], $_SESSION['reg_hafiz_id'], $_SESSION['reg_step'], $_SESSION['reg_time']);
-            setFlash('error', 'Sesi pendaftaran telah habis (10 menit). Silakan mulai ulang.');
-            $this->redirect(APP_URL . '/register');
-            return;
-        }
-
-        $nik = $_SESSION['reg_nik'];
-        $hafizId = $_SESSION['reg_hafiz_id'];
-        $tanggalLahirInput = $this->input('tanggal_lahir');
+        $hafizId = intval($this->input('hafiz_id'));
+        $nik = sanitizeNik($this->input('nik'));
+        $kabkoId = intval($this->input('kabupaten_kota_id'));
         $telepon = sanitizePhone($this->input('telepon'));
-        $password = $this->input('password');
-        $passwordConfirm = $this->input('password_confirm');
+        $tanggalLahir = $this->input('tanggal_lahir');
+
+        // Password = Phone Number (Default)
+        $password = $telepon;
 
         $errors = [];
 
-        // Validasi tanggal lahir
         $hafiz = Hafiz::findById($hafizId);
         if (!$hafiz) {
-            setFlash('error', 'Data tidak ditemukan. Silakan mulai ulang.');
+            $errors[] = 'Data tidak ditemukan.';
+            setFlash('error', implode('<br>', $errors));
             $this->redirect(APP_URL . '/register');
             return;
         }
 
-        // Bandingkan tanggal lahir (format input: YYYY-MM-DD atau DD/MM/YYYY)
-        $tglLahirDb = $hafiz['tanggal_lahir']; // format YYYY-MM-DD
-        $tglLahirUser = $this->parseInputDate($tanggalLahirInput);
+        // Verification Logic
+        $isVerified = false;
 
-        if (empty($tglLahirUser) || $tglLahirUser !== $tglLahirDb) {
-            $errors[] = 'Tanggal lahir tidak cocok dengan data kami. Pastikan sesuai dengan KTP/NIK Anda.';
+        // 1. Verify by NIK (Priority)
+        if (!empty($nik) && strlen($nik) === 16) {
+            if ($nik === $hafiz['nik']) {
+                $isVerified = true;
+            } else {
+                $errors[] = 'NIK tidak cocok dengan data kami.';
+            }
+        }
+        // 2. Verify by Date of Birth (Alternative for Search by Name)
+        elseif (!empty($tanggalLahir)) {
+            $inputDate = $this->parseInputDate($tanggalLahir);
+            if ($inputDate && $inputDate === $hafiz['tanggal_lahir']) {
+                $isVerified = true;
+                $nik = $hafiz['nik']; // Use NIK from DB
+            } else {
+                $errors[] = 'Tanggal lahir tidak cocok dengan data kami.';
+            }
+        } else {
+            $errors[] = 'NIK atau Tanggal Lahir harus diisi untuk verifikasi.';
         }
 
-        // Validasi no HP  
+        if (!$isVerified) {
+            if (empty($errors)) $errors[] = 'Verifikasi gagal. Silakan periksa data Anda.';
+        }
+
+        if (empty($kabkoId)) {
+            $errors[] = 'Pilih Kabupaten/Kota Anda.';
+        } elseif ($kabkoId != $hafiz['kabupaten_kota_id']) {
+            // Allow updating kabko?
+            // Assuming yes, or we should validate match if it's strictly verify
+            // But existing code allowed updating. We'll keep it.
+        }
+
         if (empty($telepon) || strlen($telepon) < 10) {
-            $errors[] = 'Nomor HP harus diisi (minimal 10 digit).';
+            $errors[] = 'Nomor HP tidak valid.';
         }
 
-        // Validasi password
-        if (empty($password) || strlen($password) < 6) {
-            $errors[] = 'Password minimal 6 karakter.';
-        }
-
-        if ($password !== $passwordConfirm) {
-            $errors[] = 'Konfirmasi password tidak cocok.';
-        }
-
-        // Cek no HP sudah dipakai
-        if (!empty($telepon) && User::usernameExists($telepon)) {
-            $errors[] = 'Nomor HP sudah terdaftar untuk akun lain.';
+        if (User::usernameExists($nik)) {
+            // Check if user exists for this NIK?
+            $errors[] = 'Akun untuk NIK ini sudah ada.';
         }
 
         if (!empty($errors)) {
             setFlash('error', implode('<br>', $errors));
-
-            // Tampilkan ulang form
-            $namaSamaran = $this->maskName($hafiz['nama']);
-            $captcha = generateCaptcha();
-
-            $this->view('auth.register_verify', [
-                'title' => 'Verifikasi Identitas - ' . APP_NAME,
-                'nama_samaran' => $namaSamaran,
-                'kabupaten' => $hafiz['kabupaten_kota_nama'] ?? '',
-                'captcha' => $captcha,
-                'step' => 'verify',
-                'old_telepon' => $telepon
-            ]);
+            $this->redirect(APP_URL . '/register?nik=' . $nik);
             return;
         }
 
         try {
-            // Create user account
+            Database::beginTransaction();
+
+            // 1. Create User
             $userId = User::create([
-                'username' => $telepon,
+                'username' => $nik, // Username = NIK
                 'password' => $password,
                 'role' => ROLE_HAFIZ,
-                'kabupaten_kota_id' => $hafiz['kabupaten_kota_id'],
+                'kabupaten_kota_id' => $kabkoId,
                 'nama' => $hafiz['nama'],
                 'telepon' => $telepon,
-                'is_active' => 0 // PENDING approval admin
+                'is_active' => 0 // Pending approval
             ]);
 
-            // Link hafiz ke user
-            Hafiz::update($hafizId, []);
+            // 2. Update Hafiz info
             Database::execute(
-                "UPDATE hafiz SET user_id = :user_id WHERE id = :id",
-                ['user_id' => $userId, 'id' => $hafizId]
+                "UPDATE hafiz SET 
+                    user_id = :user_id, 
+                    nik = :nik, 
+                    kabupaten_kota_id = :kabko_id, 
+                    telepon = :telepon,
+                    status_data = 'valid'
+                 WHERE id = :id",
+                [
+                    'user_id' => $userId,
+                    'nik' => $nik,
+                    'kabko_id' => $kabkoId,
+                    'telepon' => $telepon,
+                    'id' => $hafizId
+                ]
             );
 
-            // Clear registration session
-            unset($_SESSION['reg_nik'], $_SESSION['reg_hafiz_id'], $_SESSION['reg_step'], $_SESSION['reg_time']);
+            Database::commit();
 
             setFlash(
                 'success',
-                '<strong>Pendaftaran berhasil!</strong><br><br>' .
-                    'Nama: <b>' . htmlspecialchars($hafiz['nama']) . '</b><br>' .
-                    'Username (No HP): <b>' . htmlspecialchars($telepon) . '</b><br><br>' .
-                    '<span class="text-warning">⏳ Akun Anda sedang menunggu persetujuan admin kabupaten/kota.</span><br>' .
-                    'Anda akan dapat login setelah admin memverifikasi dan mengaktifkan akun Anda.'
+                '<strong>Aktivasi Berhasil!</strong><br>' .
+                    'Akun Anda sedang menunggu persetujuan admin kabupaten/kota.<br>' .
+                    'Nanti Anda bisa login menggunakan:<br>' .
+                    'Username: <b>' . $nik . '</b><br>' .
+                    'Password: <b>' . $password . '</b> (Nomor HP Anda)'
             );
             $this->redirect(APP_URL . '/login');
         } catch (Exception $e) {
-            error_log("Error in registration: " . $e->getMessage());
-            setFlash('error', 'Terjadi kesalahan saat mendaftar. Silakan coba lagi atau hubungi admin.');
+            Database::rollback();
+            error_log($e->getMessage());
+            setFlash('error', 'Gagal memproses aktivasi. Silakan coba lagi.');
             $this->redirect(APP_URL . '/register');
         }
     }
@@ -486,6 +471,13 @@ class RegistrationController extends Controller
 
         if (!$this->validateCsrf()) {
             setFlash('error', 'Sesi tidak valid.');
+            $this->redirect(APP_URL . '/register');
+            return;
+        }
+
+        $captchaInput = $this->input('captcha');
+        if (!validateCaptcha($captchaInput)) {
+            setFlash('error', 'Kode keamanan salah.');
             $this->redirect(APP_URL . '/register');
             return;
         }

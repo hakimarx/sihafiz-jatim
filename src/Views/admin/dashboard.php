@@ -158,11 +158,20 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Center of East Java
-        var map = L.map('map').setView([-7.5360, 112.2384], 8);
+        // East Java Bounds
+        var jatimBounds = L.latLngBounds(
+            L.latLng(-9.0, 110.0), // Southwest
+            L.latLng(-6.0, 116.5) // Northeast
+        );
+
+        var map = L.map('map', {
+            maxBounds: jatimBounds,
+            maxBoundsViscosity: 1.0
+        }).setView([-7.5360, 112.2384], 8);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            minZoom: 7
         }).addTo(map);
 
         var markers = <?= json_encode($mapMarkers) ?>;
@@ -170,7 +179,6 @@
 
         markers.forEach(function(m) {
             if (m.lokasi) {
-                // Parse "lat, lng" or "-lat, lng"
                 var parts = m.lokasi.split(',');
                 if (parts.length === 2) {
                     var lat = parseFloat(parts[0].trim());
@@ -197,8 +205,14 @@
 
         markerGroup.addTo(map);
 
+        // Zoom to markers but only within East Java
         if (markers.length > 0 && markerGroup.getLayers().length > 0) {
-            map.fitBounds(markerGroup.getBounds().pad(0.1));
+            var groupBounds = markerGroup.getBounds();
+            if (jatimBounds.contains(groupBounds)) {
+                map.fitBounds(groupBounds.pad(0.1));
+            } else {
+                map.setView([-7.5360, 112.2384], 8);
+            }
         }
     });
 </script>

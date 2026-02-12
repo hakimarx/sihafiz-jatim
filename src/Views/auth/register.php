@@ -1,312 +1,271 @@
-<div class="min-vh-100 d-flex align-items-center justify-content-center py-5"
-    style="background: linear-gradient(135deg, #0f5132 0%, #198754 100%); position: relative; overflow: hidden;">
+<!DOCTYPE html>
+<html lang="id">
 
-    <!-- Background Decoration -->
-    <div style="position: absolute; top: -50px; left: -50px; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
-    <div style="position: absolute; bottom: -50px; right: -50px; width: 300px; height: 300px; background: rgba(255,255,255,0.05); border-radius: 50%;"></div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= $title ?? 'Registrasi - ' . APP_NAME ?></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+        }
 
-    <div class="container position-relative" style="z-index: 1;">
-        <div class="row justify-content-center">
-            <div class="col-md-8 col-lg-6">
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
 
-                <?php
-                $sso = $_SESSION['sso_register'] ?? null;
-                $activeTab = $sso ? 'baru' : 'nik';
-                ?>
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
 
-                <!-- Card -->
-                <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-                    <!-- Card Header -->
-                    <div class="card-header bg-white text-center pt-4 pb-0 border-0">
-                        <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 rounded-circle p-3 mb-3" style="width: 80px; height: 80px;">
-                            <i class="bi bi-shield-check text-success" style="font-size: 2.5rem;"></i>
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cdf0d6;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #198754;
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-green-900 via-green-700 to-emerald-800 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-xl w-full">
+        <!-- Logo Section -->
+        <div class="text-center mb-8">
+            <div class="inline-block p-4 rounded-full bg-white/10 backdrop-blur-md mb-4 shadow-2xl">
+                <i class="bi bi-person-plus-fill text-5xl text-white"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-white mb-2">Pendaftaran Hafiz</h1>
+            <p class="text-green-100 opacity-80">Silakan pilih metode pendaftaran atau aktivasi akun Anda.</p>
+        </div>
+
+        <!-- Main Card -->
+        <div class="glass rounded-3xl shadow-2xl p-6 md:p-8 border border-white/20">
+            <!-- Flash Message -->
+            <?php $flash = getFlash(); ?>
+            <?php if ($flash): ?>
+                <div class="mb-6 p-4 rounded-xl <?= $flash['type'] === 'error' ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-blue-50 text-blue-700 border border-blue-100' ?> flex items-start gap-3">
+                    <i class="bi <?= $flash['type'] === 'error' ? 'bi-exclamation-circle-fill' : 'bi-info-circle-fill' ?> mt-0.5"></i>
+                    <div class="text-sm font-medium"><?= $flash['message'] ?></div>
+                </div>
+            <?php endif; ?>
+
+            <?php
+            $activeTab = !empty($ssoData) ? 'tab-fresh' : 'tab-nik';
+            ?>
+
+            <!-- Tabs Navigation -->
+            <div class="flex border-b border-gray-200 mb-6 overflow-x-auto">
+                <button type="button" class="whitespace-nowrap px-4 pb-4 text-center font-semibold transition-all tab-btn <?= $activeTab === 'tab-nik' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-400 hover:text-green-600' ?>" data-target="tab-nik" onclick="switchTab('tab-nik', this)">
+                    <i class="bi bi-card-heading me-2"></i>Aktivasi NIK
+                </button>
+                <button type="button" class="whitespace-nowrap px-4 pb-4 text-center font-semibold transition-all tab-btn <?= $activeTab === 'tab-nama' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-400 hover:text-green-600' ?>" data-target="tab-nama" onclick="switchTab('tab-nama', this)">
+                    <i class="bi bi-search me-2"></i>Cari Nama
+                </button>
+                <button type="button" class="whitespace-nowrap px-4 pb-4 text-center font-semibold transition-all tab-btn <?= $activeTab === 'tab-fresh' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-400 hover:text-green-600' ?>" data-target="tab-fresh" onclick="switchTab('tab-fresh', this)">
+                    <i class="bi bi-person-plus me-2"></i>Daftar Baru
+                </button>
+            </div>
+
+            <!-- Tab NIK (Default: Activation) -->
+            <div id="tab-nik" class="tab-content <?= $activeTab === 'tab-nik' ? '' : 'hidden' ?>">
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-4 text-sm text-blue-800">
+                    <i class="bi bi-info-circle-fill me-2"></i>Gunakan tab ini jika data Anda <strong>sudah ada</strong> (dari hasil import/seleksi).
+                </div>
+
+                <form action="<?= APP_URL ?>/register/check-nik" method="POST" class="space-y-6">
+                    <?= csrfField() ?>
+                    <div>
+                        <label for="nik" class="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">Nomor Induk Kependudukan (NIK)</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400">
+                                <i class="bi bi-card-heading"></i>
+                            </span>
+                            <input type="number" name="nik" id="nik" value="<?= htmlspecialchars($nik ?? '') ?>"
+                                class="block w-full pl-11 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all text-lg font-medium tracking-widest"
+                                placeholder="16 digit angka..." required>
                         </div>
-                        <h3 class="fw-bold text-dark mb-1">Registrasi Hafiz</h3>
-                        <p class="text-muted small mb-3">Pilih cara pendaftaran</p>
+                        <p class="mt-2 text-xs text-gray-500 italic">Pastikan NIK sesuai dengan yang terdaftar.</p>
                     </div>
 
-                    <div class="card-body p-4 p-md-5 pt-2">
-                        <!-- Flash Message -->
-                        <?php $flash = getFlash(); ?>
-                        <?php if ($flash): ?>
-                            <div class="alert alert-<?= $flash['type'] === 'error' ? 'danger' : ($flash['type'] === 'info' ? 'primary' : $flash['type']) ?> d-flex align-items-start mb-4 rounded-3 shadow-sm border-0" role="alert">
-                                <i class="bi <?= $flash['type'] === 'error' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill' ?> me-2 fs-5 mt-1"></i>
-                                <div><?= $flash['message'] ?></div>
-                            </div>
-                        <?php endif; ?>
+                    <button type="submit" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-green-900/20 transform transition hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2">
+                        LANJUTKAN AKTIVASI <i class="bi bi-arrow-right"></i>
+                    </button>
+                </form>
+            </div>
 
-                        <!-- Tab Navigation -->
-                        <ul class="nav nav-pills nav-fill mb-4 gap-2" id="registerTabs" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link rounded-pill d-flex align-items-center justify-content-center gap-2 <?= $activeTab === 'nik' ? 'active' : '' ?>"
-                                    id="nik-tab" data-bs-toggle="pill" data-bs-target="#nik-panel"
-                                    type="button" role="tab" aria-controls="nik-panel" aria-selected="<?= $activeTab === 'nik' ? 'true' : 'false' ?>">
-                                    <i class="bi bi-card-heading"></i>
-                                    <span>Cari NIK</span>
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link rounded-pill d-flex align-items-center justify-content-center gap-2"
-                                    id="nama-tab" data-bs-toggle="pill" data-bs-target="#nama-panel"
-                                    type="button" role="tab" aria-controls="nama-panel" aria-selected="false">
-                                    <i class="bi bi-person-badge"></i>
-                                    <span>Cari Nama</span>
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link rounded-pill d-flex align-items-center justify-content-center gap-2 <?= $activeTab === 'baru' ? 'active' : '' ?>"
-                                    id="baru-tab" data-bs-toggle="pill" data-bs-target="#baru-panel"
-                                    type="button" role="tab" aria-controls="baru-panel" aria-selected="<?= $activeTab === 'baru' ? 'true' : 'false' ?>">
-                                    <i class="bi bi-person-plus"></i>
-                                    <span>Daftar Baru</span>
-                                </button>
-                            </li>
-                        </ul>
+            <!-- Tab Cari Nama (Alternative Activation) -->
+            <div id="tab-nama" class="tab-content <?= $activeTab === 'tab-nama' ? '' : 'hidden' ?>">
+                <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-100 mb-4 text-sm text-yellow-800">
+                    <i class="bi bi-lightbulb-fill me-2"></i>Gunakan tab ini jika Anda lupa NIK atau NIK tidak ditemukan.
+                </div>
 
-                        <!-- Tab Content -->
-                        <div class="tab-content" id="registerTabContent">
-                            <!-- TAB 1: CARI NIK -->
-                            <div class="tab-pane fade <?= $activeTab === 'nik' ? 'show active' : '' ?>" id="nik-panel" role="tabpanel" aria-labelledby="nik-tab">
-                                <!-- Info Box -->
-                                <div class="alert alert-info border-0 bg-info bg-opacity-10 rounded-3 mb-4" role="alert">
-                                    <i class="bi bi-info-circle-fill text-info me-2"></i>
-                                    <small>
-                                        <strong>Langkah 1 dari 3:</strong> Masukkan NIK KTP Anda (16 digit).
-                                        Hanya hafiz yang <u>sudah terdaftar</u> yang dapat mengklaim akun.
-                                    </small>
-                                </div>
+                <form action="<?= APP_URL ?>/register/check-nama" method="POST" class="space-y-4">
+                    <?= csrfField() ?>
 
-                                <form action="<?= APP_URL ?>/register/check-nik" method="POST" class="needs-validation" novalidate>
-                                    <?= csrfField() ?>
-
-                                    <!-- NIK -->
-                                    <div class="mb-4">
-                                        <label for="nik" class="form-label fw-semibold text-secondary small text-uppercase">Nomor Induk Kependudukan (NIK)</label>
-                                        <div class="input-group input-group-lg">
-                                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-card-heading"></i></span>
-                                            <input type="text" class="form-control bg-light border-start-0 fs-5" id="nik" name="nik"
-                                                maxlength="16" placeholder="16 digit sesuai KTP" required pattern="[0-9]{16}"
-                                                inputmode="numeric" autocomplete="off"
-                                                style="letter-spacing: 2px; font-family: 'Courier New', monospace;">
-                                        </div>
-                                    </div>
-
-                                    <!-- Captcha Security -->
-                                    <div class="mb-4">
-                                        <div class="p-3 bg-opacity-10 bg-success rounded-3 border border-success border-opacity-25">
-                                            <label class="form-label fw-bold text-success small mb-2"><i class="bi bi-shield-lock me-1"></i>VERIFIKASI KEAMANAN</label>
-                                            <div class="d-flex align-items-center gap-3">
-                                                <div class="bg-white px-3 py-2 rounded border fw-bold text-dark user-select-none fs-5">
-                                                    <?= $captcha['question'] ?> = ?
-                                                </div>
-                                                <input type="number" class="form-control" name="captcha" placeholder="Jawaban..." required style="max-width: 150px;">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Submit Button -->
-                                    <button type="submit" class="btn btn-success w-100 py-3 fw-bold rounded-3 shadow-sm transition-hover fs-5">
-                                        CARI DATA SAYA <i class="bi bi-search ms-2"></i>
-                                    </button>
-                                </form>
-                            </div>
-
-                            <!-- TAB 2: CARI NAMA -->
-                            <div class="tab-pane fade" id="nama-panel" role="tabpanel" aria-labelledby="nama-tab">
-                                <!-- Info Box -->
-                                <div class="alert alert-warning border-0 bg-warning bg-opacity-10 rounded-3 mb-4" role="alert">
-                                    <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
-                                    <small>
-                                        <strong>Pendaftaran Alternatif:</strong> Gunakan pencarian ini jika NIK Anda
-                                        <u>tidak terdaftar</u> atau <u>tidak sesuai format 16 digit</u>.
-                                    </small>
-                                </div>
-
-                                <form action="<?= APP_URL ?>/register/check-nama" method="POST" class="needs-validation" novalidate>
-                                    <?= csrfField() ?>
-
-                                    <!-- Nama -->
-                                    <div class="mb-4">
-                                        <label for="nama_cari" class="form-label fw-semibold text-secondary small text-uppercase">Nama Lengkap</label>
-                                        <div class="input-group input-group-lg">
-                                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person"></i></span>
-                                            <input type="text" class="form-control bg-light border-start-0" id="nama_cari" name="nama_cari"
-                                                placeholder="Nama sesuai data terdaftar" required minlength="3"
-                                                autocomplete="off">
-                                        </div>
-                                    </div>
-
-                                    <!-- Kabupaten/Kota -->
-                                    <div class="mb-4">
-                                        <label for="kabko_id" class="form-label fw-semibold text-secondary small text-uppercase">Kabupaten/Kota</label>
-                                        <select class="form-select form-select-lg bg-light" id="kabko_id" name="kabko_id" required>
-                                            <option value="">-- Pilih Kabupaten/Kota --</option>
-                                            <?php if (!empty($kabko_list)): ?>
-                                                <?php foreach ($kabko_list as $kk): ?>
-                                                    <option value="<?= $kk['id'] ?>"><?= htmlspecialchars($kk['nama']) ?></option>
-                                                <?php endforeach; ?>
-                                            <?php endif; ?>
-                                        </select>
-                                    </div>
-
-                                    <!-- Captcha Security -->
-                                    <div class="mb-4">
-                                        <div class="p-3 bg-opacity-10 bg-success rounded-3 border border-success border-opacity-25">
-                                            <label class="form-label fw-bold text-success small mb-2"><i class="bi bi-shield-lock me-1"></i>VERIFIKASI KEAMANAN</label>
-                                            <div class="d-flex align-items-center gap-3">
-                                                <div class="bg-white px-3 py-2 rounded border fw-bold text-dark user-select-none fs-5">
-                                                    <?= $captcha['question'] ?> = ?
-                                                </div>
-                                                <input type="number" class="form-control" name="captcha" placeholder="Jawaban..." required style="max-width: 150px;">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Submit Button -->
-                                    <button type="submit" class="btn btn-warning w-100 py-3 fw-bold rounded-3 shadow-sm transition-hover fs-5 text-dark">
-                                        CARI DATA SAYA <i class="bi bi-search ms-2"></i>
-                                    </button>
-                                </form>
-                            </div>
-
-                            <!-- TAB 3: DAFTAR BARU -->
-                            <div class="tab-pane fade <?= $activeTab === 'baru' ? 'show active' : '' ?>" id="baru-panel" role="tabpanel" aria-labelledby="baru-tab">
-                                <div class="text-center mb-4">
-                                    <?php if ($sso): ?>
-                                        <div class="alert alert-primary border-0 bg-primary bg-opacity-10 d-flex align-items-center gap-2 mb-3">
-                                            <?php if ($sso['foto']): ?>
-                                                <img src="<?= $sso['foto'] ?>" class="rounded-circle" width="32" height="32">
-                                            <?php else: ?>
-                                                <i class="bi bi-person-circle fs-4"></i>
-                                            <?php endif; ?>
-                                            <div class="text-start">
-                                                <div class="fw-bold small">Mendaftar via SSO <?= ucfirst($sso['type']) ?></div>
-                                                <div class="small opacity-75"><?= $sso['email'] ?></div>
-                                            </div>
-                                            <a href="<?= APP_URL ?>/register" class="ms-auto btn btn-link btn-sm text-decoration-none p-0">Batal</a>
-                                        </div>
-                                    <?php else: ?>
-                                        <p class="text-muted">Data Anda belum terdaftar? Daftar baru disini atau gunakan akun sosial media Anda.</p>
-
-                                        <div class="d-grid gap-2 mb-4">
-                                            <a href="<?= APP_URL ?>/login/google" class="btn btn-outline-danger py-2 rounded-3 d-flex align-items-center justify-content-center gap-2">
-                                                <i class="bi bi-google"></i> Daftar dengan Google
-                                            </a>
-                                            <div class="row g-2">
-                                                <div class="col-6">
-                                                    <a href="#" class="btn btn-outline-primary py-2 rounded-3 w-100 d-flex align-items-center justify-content-center gap-2 disabled">
-                                                        <i class="bi bi-facebook"></i> Facebook
-                                                    </a>
-                                                </div>
-                                                <div class="col-6">
-                                                    <a href="#" class="btn btn-outline-dark py-2 rounded-3 w-100 d-flex align-items-center justify-content-center gap-2 disabled">
-                                                        <i class="bi bi-instagram"></i> Instagram
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="d-flex align-items-center mb-4">
-                                            <hr class="flex-grow-1">
-                                            <span class="px-3 text-muted small fw-bold">ATAU</span>
-                                            <hr class="flex-grow-1">
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-
-                                <form action="<?= APP_URL ?>/register/fresh" method="POST" class="needs-validation" novalidate>
-                                    <?= csrfField() ?>
-
-                                    <div class="mb-3">
-                                        <label class="form-label small fw-bold text-secondary text-uppercase">Nama Lengkap</label>
-                                        <input type="text" class="form-control" name="nama" required placeholder="Nama sesuai KTP" value="<?= htmlspecialchars($sso['nama'] ?? '') ?>">
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label small fw-bold text-secondary text-uppercase">NIK (16 Digit)</label>
-                                        <input type="text" class="form-control" name="nik" required maxlength="16" pattern="[0-9]{16}" placeholder="16 digit angka">
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label small fw-bold text-secondary text-uppercase">Kabupaten/Kota</label>
-                                        <select class="form-select" name="kabko_id" required>
-                                            <option value="">-- Pilih Wilayah --</option>
-                                            <?php if (!empty($kabko_list)): ?>
-                                                <?php foreach ($kabko_list as $kk): ?>
-                                                    <option value="<?= $kk['id'] ?>"><?= htmlspecialchars($kk['nama']) ?></option>
-                                                <?php endforeach; ?>
-                                            <?php endif; ?>
-                                        </select>
-                                    </div>
-
-                                    <div class="mb-4">
-                                        <label class="form-label small fw-bold text-secondary text-uppercase">Nomor HP / WhatsApp</label>
-                                        <input type="tel" class="form-control" name="telepon" required placeholder="Contoh: 08123456789">
-                                    </div>
-
-                                    <button type="submit" class="btn btn-success w-100 py-3 fw-bold rounded-3 shadow-sm transition-hover fs-5">
-                                        <?= $sso ? 'SELESAIKAN PENDAFTARAN' : 'DAFTAR SEKARANG' ?> <i class="bi <?= $sso ? 'bi-check-circle' : 'bi-person-plus' ?> ms-2"></i>
-                                    </button>
-                                </form>
-                            </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">Nama Lengkap</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400">
+                                <i class="bi bi-person"></i>
+                            </span>
+                            <input type="text" name="nama_cari" class="block w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all font-medium" placeholder="Nama sesuai sertifikat..." required>
                         </div>
                     </div>
 
-                    <div class="card-footer bg-light p-4 text-center border-top-0">
-                        <p class="text-muted mb-0 small">
-                            Sudah memiliki akun? <a href="<?= APP_URL ?>/login" class="text-success fw-bold text-decoration-none">Masuk disini</a>
-                        </p>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">Kabupaten/Kota</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400">
+                                <i class="bi bi-geo-alt"></i>
+                            </span>
+                            <select name="kabko_id" class="block w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all font-medium appearance-none" required>
+                                <option value="">-- Pilih Kota Asal --</option>
+                                <?php if (!empty($kabkoList)): ?>
+                                    <?php foreach ($kabkoList as $kab): ?>
+                                        <option value="<?= $kab['id'] ?>"><?= htmlspecialchars($kab['nama']) ?></option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+                            <span class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-400">
+                                <i class="bi bi-chevron-down"></i>
+                            </span>
+                        </div>
                     </div>
-                </div>
 
-                <div class="text-center mt-4 text-white-50 small">
-                    <p>&copy; <?= date('Y') ?> LPTQ Provinsi Jawa Timur. <br>Sistem Informasi Hafiz (SiHafiz).</p>
-                </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">Kode Keamanan</label>
+                        <div class="flex gap-3">
+                            <div class="w-1/3 bg-gray-200 rounded-xl flex items-center justify-center font-mono text-xl tracking-widest text-gray-600 select-none border border-gray-300">
+                                <?= $captcha['code'] ?>
+                                <input type="hidden" name="captcha_hash" value="<?= $captcha['hash'] ?>">
+                            </div>
+                            <input type="text" name="captcha" class="block w-2/3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all font-medium text-center tracking-widest" placeholder="Ketik kode..." required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-900/20 transform transition hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2 mt-2">
+                        CARI DATA SAYA <i class="bi bi-search"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Tab Daftar Baru (Fresh Register) -->
+            <div id="tab-fresh" class="tab-content <?= $activeTab === 'tab-fresh' ? '' : 'hidden' ?>">
+
+                <?php if (!empty($ssoData)): ?>
+                    <div class="bg-green-50 p-4 rounded-xl border border-green-100 mb-4 flex items-start gap-3">
+                        <img src="<?= htmlspecialchars($ssoData['foto'] ?? 'https://ui-avatars.com/api/?name=' . urlencode($ssoData['nama'])) ?>" class="w-10 h-10 rounded-full">
+                        <div>
+                            <h4 class="font-bold text-green-800">Mendaftar sebagai <?= htmlspecialchars($ssoData['nama']) ?></h4>
+                            <p class="text-xs text-green-600"><?= htmlspecialchars($ssoData['email']) ?></p>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="mb-6">
+                        <a href="<?= APP_URL ?>/login/google" class="w-full bg-white border border-gray-200 text-gray-700 font-bold py-3 rounded-xl shadow-sm hover:bg-gray-50 transition-all flex items-center justify-center gap-2 text-sm">
+                            <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5" alt="Google">
+                            Daftar Cepat dengan Google
+                        </a>
+                        <div class="relative flex py-3 items-center">
+                            <div class="flex-grow border-t border-gray-200"></div>
+                            <span class="flex-shrink mx-4 text-gray-400 text-xs uppercase">Atau Manual</span>
+                            <div class="flex-grow border-t border-gray-200"></div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <form action="<?= APP_URL ?>/register/fresh" method="POST" class="space-y-4">
+                    <?= csrfField() ?>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">Nama Lengkap (Sesuai KTP)</label>
+                        <input type="text" name="nama" value="<?= htmlspecialchars($ssoData['nama'] ?? '') ?>" class="block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all font-medium" placeholder="Nama Lengkap..." required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">NIK (16 Digit)</label>
+                        <input type="number" name="nik" class="block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all font-medium" placeholder="NIK..." required>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">Kabupaten/Kota</label>
+                            <select name="kabko_id" class="block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all font-medium appearance-none" required>
+                                <option value="">-- Pilih --</option>
+                                <?php if (!empty($kabkoList)): ?>
+                                    <?php foreach ($kabkoList as $kab): ?>
+                                        <option value="<?= $kab['id'] ?>"><?= htmlspecialchars($kab['nama']) ?></option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">No. HP / WA</label>
+                            <input type="number" name="telepon" class="block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all font-medium" placeholder="08..." required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">Kode Keamanan</label>
+                        <div class="flex gap-3">
+                            <div class="w-1/3 bg-gray-200 rounded-xl flex items-center justify-center font-mono text-xl tracking-widest text-gray-600 select-none border border-gray-300">
+                                <?= $captcha['code'] ?>
+                                <!-- Hash is already in the other form, but we need unique name or shared helper? 
+                                     Actually, RegistrationController generates ONE captcha per request. 
+                                     So the hash is same for all forms. We can reuse the value or output hidden input again. -->
+                                <input type="hidden" name="captcha_hash" value="<?= $captcha['hash'] ?>">
+                            </div>
+                            <input type="text" name="captcha" class="block w-2/3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all font-medium text-center tracking-widest" placeholder="Ketik kode..." required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-purple-900/20 transform transition hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2 mt-2">
+                        DAFTAR SEKARANG <i class="bi bi-person-plus"></i>
+                    </button>
+                </form>
+            </div>
+
+            <div class="mt-8 pt-6 border-t border-gray-100 text-center">
+                <p class="text-gray-500 text-sm">Sudah punya akun aktif?
+                    <a href="<?= APP_URL ?>/login" class="text-green-600 font-bold hover:underline">Masuk di sini</a>
+                </p>
             </div>
         </div>
+
+        <p class="text-center mt-8 text-green-100/50 text-sm">
+            &copy; <?= date('Y') ?> LPTQ Provinsi Jawa Timur
+        </p>
     </div>
-</div>
 
-<style>
-    .transition-hover {
-        transition: all 0.3s ease;
-    }
+    <script>
+        function switchTab(tabId, btn) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            // Show selected tab
+            document.getElementById(tabId).classList.remove('hidden');
 
-    .transition-hover:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
-    }
+            // Reset buttons
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('text-green-600', 'border-b-2', 'border-green-600');
+                el.classList.add('text-gray-400');
+            });
 
-    .form-control:focus,
-    .form-select:focus {
-        border-color: #198754;
-        box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
-        background-color: #fff !important;
-    }
+            // Activate button
+            btn.classList.remove('text-gray-400');
+            btn.classList.add('text-green-600', 'border-b-2', 'border-green-600');
+        }
+    </script>
+</body>
 
-    input:-webkit-autofill,
-    input:-webkit-autofill:hover,
-    input:-webkit-autofill:focus,
-    input:-webkit-autofill:active {
-        -webkit-box-shadow: 0 0 0 30px #f8f9fa inset !important;
-    }
-
-    .nav-pills .nav-link {
-        color: #6c757d;
-        font-weight: 600;
-        border: 2px solid #e9ecef;
-        transition: all 0.3s ease;
-    }
-
-    .nav-pills .nav-link.active {
-        background-color: #198754;
-        color: white;
-        border-color: #198754;
-    }
-
-    .nav-pills .nav-link:not(.active):hover {
-        background-color: #f8f9fa !important;
-        border-color: #198754;
-        color: #198754;
-    }
-</style>
+</html>

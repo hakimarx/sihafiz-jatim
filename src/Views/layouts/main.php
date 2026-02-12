@@ -186,6 +186,11 @@
                                     </a>
                                 </li>
                                 <li class="nav-item">
+                                    <a class="nav-link <?= strpos($currentUri, '/admin/mutasi') !== false ? 'active' : '' ?>" href="<?= APP_URL ?>/admin/mutasi">
+                                        <i class="bi bi-arrow-left-right"></i> Transfer Hafiz (Mutasi)
+                                    </a>
+                                </li>
+                                <li class="nav-item">
                                     <a class="nav-link <?= strpos($currentUri, '/admin/reports') !== false ? 'active' : '' ?>" href="<?= APP_URL ?>/admin/reports">
                                         <i class="bi bi-printer"></i> Cetak Laporan
                                     </a>

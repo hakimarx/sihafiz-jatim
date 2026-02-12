@@ -74,6 +74,7 @@ class AdminController extends Controller
             'search' => $this->input('search'),
             'kabupaten_kota_id' => $this->input('kabupaten_kota_id'),
             'status_kelulusan' => $this->input('status_kelulusan'),
+            'status_data' => $this->input('status_data'),
             'tahun_tes' => $this->input('tahun_tes') ?: TAHUN_ANGGARAN,
         ];
 
@@ -177,9 +178,13 @@ class AdminController extends Controller
                 'telepon' => sanitizePhone($this->input('telepon')),
                 'email' => sanitizeEmail($this->input('email')),
                 'sertifikat_tahfidz' => $this->input('sertifikat_tahfidz'),
-                'mengajar' => $this->input('mengajar') ? 1 : 0,
+                'mengajar' => !empty($this->input('tempat_mengajar')) ? 1 : 0,
                 'tmt_mengajar' => $this->input('tmt_mengajar') ?: null,
                 'tempat_mengajar' => $this->input('tempat_mengajar'),
+                'tahun_lulus' => $this->input('tahun_lulus'),
+                'lokasi_seleksi' => $this->input('lokasi_seleksi'),
+                'is_meninggal' => $this->input('is_meninggal') ? 1 : 0,
+                'tanggal_kematian' => $this->input('tanggal_kematian') ?: null,
             ]);
 
             // Handle additional teaching locations
@@ -271,10 +276,15 @@ class AdminController extends Controller
                 'nama_bank' => $this->input('nama_bank'),
                 'nomor_rekening' => $this->input('nomor_rekening'),
                 'sertifikat_tahfidz' => $this->input('sertifikat_tahfidz'),
-                'mengajar' => $this->input('mengajar') ? 1 : 0,
+                'mengajar' => !empty($this->input('tempat_mengajar')) ? 1 : 0,
                 'tmt_mengajar' => $this->input('tmt_mengajar') ?: null,
                 'tempat_mengajar' => $this->input('tempat_mengajar'),
+                'status_data' => $this->input('status_data') ?: 'valid',
                 'keterangan' => $this->input('keterangan'),
+                'tahun_lulus' => $this->input('tahun_lulus'),
+                'lokasi_seleksi' => $this->input('lokasi_seleksi'),
+                'is_meninggal' => $this->input('is_meninggal') ? 1 : 0,
+                'tanggal_kematian' => $this->input('tanggal_kematian') ?: null,
             ]);
 
             // Handle additional teaching locations
@@ -318,6 +328,30 @@ class AdminController extends Controller
             setFlash('success', 'Data Hafiz berhasil dihapus.');
         } catch (Exception $e) {
             setFlash('error', 'Gagal menghapus data.');
+        }
+
+        $this->redirect(APP_URL . '/admin/hafiz');
+    }
+
+    /**
+     * Mark Hafiz as Deceased
+     */
+    public function hafizMarkDeceased(string $id): void
+    {
+        if (!$this->isPost() || !$this->validateCsrf()) {
+            setFlash('error', 'Request tidak valid.');
+            $this->redirect(APP_URL . '/admin/hafiz');
+            return;
+        }
+
+        try {
+            Hafiz::update((int) $id, [
+                'is_meninggal' => 1,
+                'tanggal_kematian' => date('Y-m-d')
+            ]);
+            setFlash('success', 'Hafiz ditandai sebagai meninggal dunia.');
+        } catch (Exception $e) {
+            setFlash('error', 'Gagal memperbarui data.');
         }
 
         $this->redirect(APP_URL . '/admin/hafiz');
@@ -409,7 +443,7 @@ class AdminController extends Controller
                 $admin = User::findById(getCurrentUserId());
                 // Get hafiz data to check their region
                 $hafiz = Hafiz::findById($laporan['hafiz_id']);
-                
+
                 if ($hafiz['kabupaten_kota_id'] != $admin['kabupaten_kota_id']) {
                     setFlash('error', 'Anda tidak berwenang memverifikasi laporan dari kabupaten/kota lain.');
                     $this->redirect(APP_URL . '/admin/laporan');

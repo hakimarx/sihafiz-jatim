@@ -56,8 +56,19 @@
     </div>
     <div class="col-6 col-md-3 mb-3">
         <div class="p-3 bg-white rounded shadow-sm border-start border-info border-4">
-            <h1 class="fw-bold mb-0 text-info"><?= $hafiz['status_kelulusan'] === 'lulus' ? 'Aktif' : 'Non-Aktif' ?></h1>
-            <small class="text-muted text-uppercase fw-bold">Status Saya</small>
+            <?php
+            // Karena hanya hafiz LULUS yang bisa login, maka statusnya pasti Lulus/Penerima Insentif
+            // Kecuali jika ada anomali data (misal admin mengubah status setelah user login)
+            $statusLabel = 'Penerima Insentif';
+            $statusClass = 'text-success';
+
+            if ($hafiz['status_kelulusan'] !== 'lulus') {
+                $statusLabel = 'Non-Aktif';
+                $statusClass = 'text-danger';
+            }
+            ?>
+            <h4 class="fw-bold mb-0 <?= $statusClass ?>" style="font-size: 1.2rem; margin-top: 0.5rem; margin-bottom: 0.5rem;"><?= $statusLabel ?></h4>
+            <small class="text-muted text-uppercase fw-bold">Status Peserta</small>
         </div>
     </div>
 </div>

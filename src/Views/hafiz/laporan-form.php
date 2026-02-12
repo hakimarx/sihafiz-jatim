@@ -61,11 +61,20 @@
 
                     <!-- 4. Lokasi -->
                     <div class="row mb-3">
-                        <div class="col-md-12 mb-3">
-                            <label class="form-label">Lokasi</label>
-                            <input type="text" class="form-control" name="lokasi" id="lokasiInput"
-                                placeholder="Pilih foto untuk mengisi otomatis, atau ketik manual..."
-                                value="<?= htmlspecialchars($laporan['lokasi'] ?? '') ?>">
+                        <div class="col-md-12 mb-2">
+                            <label class="form-label fw-bold">Lokasi Kegiatan</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="bi bi-geo-alt text-success"></i></span>
+                                <input type="text" class="form-control" name="lokasi" id="lokasiInput"
+                                    placeholder="Pilih foto untuk mengisi otomatis, atau ketik manual..."
+                                    value="<?= htmlspecialchars($laporan['lokasi'] ?? '') ?>">
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div id="map-hafiz" class="rounded border shadow-sm mb-3" style="height: 250px; width: 100%; z-index: 1;"></div>
+                            <p class="small text-muted mt-n2">
+                                <i class="bi bi-info-circle me-1"></i> Klik pada peta jika ingin mengubah lokasi secara manual.
+                            </p>
                         </div>
                     </div>
 
@@ -107,8 +116,91 @@
     </div>
 </div>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
 <script>
+    // Initialize Map for Hafiz
+    let mapHafiz;
+    let markerHafiz;
+    const defaultLat = -7.5360;
+    const defaultLng = 112.2384;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        mapHafiz = L.map('map-hafiz').setView([defaultLat, defaultLng], 8);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(mapHafiz);
+
+        // If Edit mode and has location, set marker
+        const currentLoc = document.getElementById('lokasiInput').value;
+        if (currentLoc && currentLoc.includes(',')) {
+            const parts = currentLoc.split(',');
+            const lat = parseFloat(parts[0]);
+            const lng = parseFloat(parts[1]);
+            if (!isNaN(lat) && !isNaN(lng)) {
+                updateMapMarker(lat, lng, 15);
+            }
+        }
+
+        // Handle Map Click
+        mapHafiz.on('click', function(e) {
+            updateMapMarker(e.latlng.lat, e.latlng.lng);
+            reverseGeocode(e.latlng.lat, e.latlng.lng);
+        });
+    });
+
+    function updateMapMarker(lat, lng, zoom = null) {
+        if (markerHafiz) {
+            markerHafiz.setLatLng([lat, lng]);
+        } else {
+            markerHafiz = L.marker([lat, lng], {
+                draggable: true
+            }).addTo(mapHafiz);
+            markerHafiz.on('dragend', function(e) {
+                const pos = markerHafiz.getLatLng();
+                reverseGeocode(pos.lat, pos.lng);
+            });
+        }
+        if (zoom) mapHafiz.setView([lat, lng], zoom);
+        else mapHafiz.panTo([lat, lng]);
+
+        // Update coordinate input as fallback before reverse geocode finishes
+        document.getElementById('lokasiInput').value = lat.toFixed(6) + ', ' + lng.toFixed(6);
+    }
+
+    function reverseGeocode(lat, lng) {
+        const status = document.getElementById('detectionStatus');
+        if (status) {
+            status.style.display = 'block';
+            status.className = 'small mt-1 text-primary';
+            status.textContent = 'Mencari alamat...';
+        }
+
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+                headers: {
+                    'User-Agent': 'SiHafiz-Jatim-App'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.display_name) {
+                    document.getElementById('lokasiInput').value = data.display_name;
+                    if (status) {
+                        status.className = 'small mt-1 text-success fw-bold';
+                        status.textContent = '✓ Lokasi terpilih: ' + data.display_name;
+                    }
+                }
+            })
+            .catch(err => {
+                console.error('Reverse Geocode Error:', err);
+                if (status) {
+                    status.textContent = 'Koordinat terpilih: ' + lat.toFixed(6) + ', ' + lng.toFixed(6);
+                }
+            });
+    }
+
     // Image preview and EXIF detection
     document.getElementById('fotoInput').addEventListener('change', function(e) {
         const preview = document.getElementById('imagePreview');
@@ -155,7 +247,8 @@
                         if (latRef === 'S') latitude = -latitude;
                         if (lonRef === 'W') longitude = -longitude;
 
-                        document.getElementById('lokasiInput').value = latitude.toFixed(6) + ', ' + longitude.toFixed(6);
+                        updateMapMarker(latitude, longitude, 17);
+                        reverseGeocode(latitude, longitude);
                         results.push('Lokasi (GPS)');
                     }
 

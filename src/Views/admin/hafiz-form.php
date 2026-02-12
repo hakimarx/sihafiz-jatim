@@ -111,22 +111,30 @@
                     <input type="text" class="form-control" name="sertifikat_tahfidz" placeholder="Contoh: PP. Al-Amin"
                         value="<?= htmlspecialchars($hafiz['sertifikat_tahfidz'] ?? '') ?>">
                 </div>
-                <div class="col-md-2 mb-3">
-                    <label class="form-label">Mengajar?</label>
-                    <div class="form-check form-switch mt-2">
-                        <input class="form-check-input" type="checkbox" name="mengajar" id="mengajar" value="1"
-                            <?= ($hafiz['mengajar'] ?? 0) ? 'checked' : '' ?>>
-                        <label class="form-check-label" for="mengajar">Ya</label>
-                    </div>
+
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Tahun Lulus</label>
+                    <input type="number" class="form-control" name="tahun_lulus" placeholder="Tahun"
+                        value="<?= htmlspecialchars($hafiz['tahun_lulus'] ?? '') ?>">
                 </div>
-                <div class="col-md-5 mb-3">
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Lokasi Seleksi</label>
+                    <input type="text" class="form-control" name="lokasi_seleksi" placeholder="Contoh: Masjid Agung..."
+                        value="<?= htmlspecialchars($hafiz['lokasi_seleksi'] ?? '') ?>">
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6 mb-3">
                     <label class="form-label">Tempat Mengajar Utama</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control mb-2" name="tempat_mengajar" placeholder="Tempat"
-                            value="<?= htmlspecialchars($hafiz['tempat_mengajar'] ?? '') ?>">
-                        <input type="date" class="form-control mb-2" name="tmt_mengajar"
-                            value="<?= htmlspecialchars($hafiz['tmt_mengajar'] ?? '') ?>">
-                    </div>
+                    <input type="text" class="form-control" name="tempat_mengajar" placeholder="Nama Tempat / Lembaga"
+                        value="<?= htmlspecialchars($hafiz['tempat_mengajar'] ?? '') ?>">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Mulai Mengajar (TMT)</label>
+                    <input type="date" class="form-control" name="tmt_mengajar"
+                        value="<?= htmlspecialchars($hafiz['tmt_mengajar'] ?? '') ?>">
                 </div>
             </div>
 
@@ -203,13 +211,43 @@
                     </div>
                 </div>
 
-                <!-- Keterangan -->
+                <!-- Status Data & Keterangan -->
                 <div class="row mb-4">
-                    <div class="col-12">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Kualitas Data</label>
+                        <select class="form-select" name="status_data">
+                            <option value="valid" <?= ($hafiz['status_data'] ?? 'valid') === 'valid' ? 'selected' : '' ?>>Valid</option>
+                            <option value="perlu_perbaikan" <?= ($hafiz['status_data'] ?? '') === 'perlu_perbaikan' ? 'selected' : '' ?>>Perlu Perbaikan</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8 mb-3">
                         <label class="form-label">Keterangan</label>
                         <textarea class="form-control" name="keterangan" rows="2"><?= htmlspecialchars($hafiz['keterangan'] ?? '') ?></textarea>
                     </div>
                 </div>
+
+                <!-- Status Meninggal -->
+                <div class="row mb-4 bg-light p-3 rounded">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold text-danger">Status Kehidupan</label>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="checkMeninggal" name="is_meninggal" value="1" <?= ($hafiz['is_meninggal'] ?? 0) ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="checkMeninggal">Hafiz Meninggal Dunia</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3" id="dateMeninggalContainer" style="<?= ($hafiz['is_meninggal'] ?? 0) ? '' : 'display:none' ?>">
+                        <label class="form-label">Tanggal Wafat</label>
+                        <input type="date" class="form-control" name="tanggal_kematian" value="<?= htmlspecialchars($hafiz['tanggal_kematian'] ?? '') ?>">
+                    </div>
+                    <div class="col-md-12">
+                        <small class="text-muted"><i class="bi bi-info-circle me-1"></i> Hafiz yang meninggal tidak akan menerima tunjangan insentif dan tidak perlu mengisi laporan harian.</small>
+                    </div>
+                </div>
+                <script>
+                    document.getElementById('checkMeninggal').addEventListener('change', function() {
+                        document.getElementById('dateMeninggalContainer').style.display = this.checked ? 'block' : 'none';
+                    });
+                </script>
             <?php endif; ?>
 
             <!-- Buttons -->

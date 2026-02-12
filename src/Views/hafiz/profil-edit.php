@@ -300,42 +300,49 @@
 
             // 2. Parselines for fields
             lines.forEach((line, index) => {
-                // Nama
-                if (line.includes('NAMA') && !dataFound.nama) {
+                // Nama - Look for line after NIK or containing NAMA
+                if (line.includes('NAMA') || (index > 0 && lines[index - 1].match(/\b\d{16}\b/))) {
                     let val = line.split(/[:=]/).pop()?.trim().replace(/[^A-Z\s]/g, '');
-                    if (val && val.length > 3) dataFound.nama = val;
+                    if (val && val.length > 3 && !dataFound.nama) dataFound.nama = val;
                 }
 
-                // Tempat/Tgl Lahir
-                if ((line.includes('LAHIR') || line.includes('TEMPAT')) && !dataFound.ttl) {
+                // Tempat/Tgl Lahir - Support comma, dot, or space
+                if (line.includes('LAHIR') || line.includes('TEMPAT')) {
                     let val = line.split(/[:=]/).pop()?.trim();
                     if (val) {
-                        let parts = val.split(',');
+                        let parts = val.split(/[,\.\s]/).filter(p => p.trim().length > 0);
                         if (parts.length >= 2) {
-                            dataFound.tempat = parts[0].trim();
-                            let dateStr = parts[1].trim().match(/\d{2}-\d{2}-\d{4}/);
-                            if (dateStr) {
-                                let d = dateStr[0].split('-');
-                                dataFound.tanggal = `${d[2]}-${d[1]}-${d[0]}`;
+                            // First part is usually place
+                            if (!dataFound.tempat) dataFound.tempat = parts[0].trim();
+
+                            // Look for date in any part
+                            let dateStrMatch = val.match(/(\d{2})[-/](\d{2})[-/](\d{4})/);
+                            if (dateStrMatch && !dataFound.tanggal) {
+                                dataFound.tanggal = `${dateStrMatch[3]}-${dateStrMatch[2]}-${dateStrMatch[1]}`;
                             }
                         }
                     }
                 }
 
                 // Jenis Kelamin
-                if (line.includes('KELAMIN')) {
+                if (line.includes('KELAMIN') || line.includes('JENIS')) {
                     if (line.includes('LAKI')) dataFound.gender = 'L';
-                    else if (line.includes('PEREMPUAN')) dataFound.gender = 'P';
+                    else if (line.includes('PEREMPUAN') || line.includes('PEREM')) dataFound.gender = 'P';
                 }
 
-                // Alamat (Biasanya baris setelah kata ALAMAT)
-                if (line.includes('ALAMAT') && lines[index + 1]) {
-                    dataFound.alamat = lines[index + 1].replace(/[:=]/, '').trim();
+                // Alamat (Biasanya baris setelah kata ALAMAT atau mengandung ALAMAT)
+                if (line.includes('ALAMAT')) {
+                    let suffix = line.split(/[:=]/).pop()?.trim();
+                    if (suffix && suffix.length > 5) {
+                        dataFound.alamat = suffix;
+                    } else if (lines[index + 1]) {
+                        dataFound.alamat = lines[index + 1].replace(/[:=]/, '').trim();
+                    }
                 }
 
                 // RT/RW
-                if (line.includes('RT/RW') || line.includes('RT / RW')) {
-                    let rtrw = line.match(/(\d+)\s*[/]\s*(\d+)/);
+                if (line.includes('RT/RW') || line.includes('RT / RW') || line.match(/\d{3}\s*[/]\s*\d{3}/)) {
+                    let rtrw = line.match(/(\d{3})\s*[/]\s*(\d{3})/) || line.match(/(\d+)\s*[/]\s*(\d+)/);
                     if (rtrw) {
                         dataFound.rt = rtrw[1];
                         dataFound.rw = rtrw[2];
@@ -351,7 +358,7 @@
                 }
             });
 
-            // Map data to fields with confirmation
+            // Map data to fields
             const fieldsMap = {
                 'field_nik': dataFound.nik,
                 'field_nama': dataFound.nama,
@@ -368,7 +375,8 @@
             for (let id in fieldsMap) {
                 if (fieldsMap[id]) {
                     let el = document.getElementById(id);
-                    if (el && (!el.value || el.value === 'BANK JATIM')) { // special case bank
+                    // allow overwrite if empty or '-' or default value
+                    if (el && (!el.value || el.value === '-' || el.value === 'BANK JATIM')) {
                         el.value = fieldsMap[id];
                         count++;
                     }
@@ -376,7 +384,10 @@
             }
 
             if (dataFound.gender) {
-                document.getElementById(dataFound.gender === 'L' ? 'gender_l' : 'gender_p').checked = true;
+                let radioL = document.getElementById('gender_l');
+                let radioP = document.getElementById('gender_p');
+                if (dataFound.gender === 'L') radioL.checked = true;
+                else radioP.checked = true;
                 count++;
             }
 

@@ -83,6 +83,11 @@ class Hafiz
             $params['status_kelulusan'] = $filters['status_kelulusan'];
         }
 
+        if (!empty($filters['status_data'])) {
+            $where[] = "h.status_data = :status_data";
+            $params['status_data'] = $filters['status_data'];
+        }
+
         if (!empty($filters['search'])) {
             $where[] = "(h.nama LIKE :search OR h.nik LIKE :search2)";
             $params['search'] = "%{$filters['search']}%";
@@ -156,12 +161,12 @@ class Hafiz
                 user_id, nik, nama, tempat_lahir, tanggal_lahir, jenis_kelamin,
                 alamat, rt, rw, desa_kelurahan, kecamatan, kabupaten_kota_id,
                 telepon, email, sertifikat_tahfidz, mengajar, tmt_mengajar,
-                tempat_mengajar, tahun_tes, is_aktif
+                tempat_mengajar, tahun_tes, tahun_lulus, lokasi_seleksi, is_meninggal, tanggal_kematian, is_aktif
             ) VALUES (
                 :user_id, :nik, :nama, :tempat_lahir, :tanggal_lahir, :jenis_kelamin,
                 :alamat, :rt, :rw, :desa_kelurahan, :kecamatan, :kabupaten_kota_id,
                 :telepon, :email, :sertifikat_tahfidz, :mengajar, :tmt_mengajar,
-                :tempat_mengajar, :tahun_tes, 1
+                :tempat_mengajar, :tahun_tes, :tahun_lulus, :lokasi_seleksi, :is_meninggal, :tanggal_kematian, 1
             )",
             [
                 'user_id' => $userId,
@@ -179,10 +184,14 @@ class Hafiz
                 'telepon' => $data['telepon'] ?? null,
                 'email' => $data['email'] ?? null,
                 'sertifikat_tahfidz' => $data['sertifikat_tahfidz'] ?? null,
-                'mengajar' => $data['mengajar'] ?? 0,
+                'mengajar' => !empty($data['tempat_mengajar']) ? 1 : 0,
                 'tmt_mengajar' => $data['tmt_mengajar'] ?? null,
                 'tempat_mengajar' => $data['tempat_mengajar'] ?? null,
                 'tahun_tes' => $data['tahun_tes'] ?? TAHUN_ANGGARAN,
+                'tahun_lulus' => $data['tahun_lulus'] ?? null,
+                'lokasi_seleksi' => $data['lokasi_seleksi'] ?? null,
+                'is_meninggal' => $data['is_meninggal'] ?? 0,
+                'tanggal_kematian' => $data['tanggal_kematian'] ?? null,
             ]
         );
 
@@ -223,7 +232,12 @@ class Hafiz
             'keterangan',
             'foto_profil',
             'foto_ktp',
-            'tanda_tangan'
+            'tanda_tangan',
+            'status_data',
+            'tahun_lulus',
+            'lokasi_seleksi',
+            'is_meninggal',
+            'tanggal_kematian'
         ];
 
         foreach ($allowedFields as $field) {

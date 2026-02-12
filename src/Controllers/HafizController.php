@@ -381,8 +381,16 @@ class HafizController extends Controller
             'email' => $this->input('email'),
             'nama_bank' => $this->input('nama_bank'),
             'nomor_rekening' => $this->input('nomor_rekening'),
-            'tanda_tangan' => $this->input('tanda_tangan'), // New: Base64 signature
         ];
+
+        // Handle Tanda Tangan (Base64)
+        $signatureBase64 = $this->input('tanda_tangan');
+        if (!empty($signatureBase64) && strpos($signatureBase64, 'data:image') === 0) {
+            $signaturePath = $this->saveBase64Image($signatureBase64, 'signatures', 'sign_' . $this->hafiz['id']);
+            if ($signaturePath) {
+                $updateData['tanda_tangan'] = $signaturePath;
+            }
+        }
 
         // Validasi Wajib KTP (jika belum ada di DB)
         $isKtpUploaded = (isset($_FILES['foto_ktp']) && $_FILES['foto_ktp']['error'] === UPLOAD_ERR_OK);
@@ -431,12 +439,12 @@ class HafizController extends Controller
                         user_id, nik, nama, tempat_lahir, tanggal_lahir, jenis_kelamin,
                         alamat, desa_kelurahan, kecamatan, kabupaten_kota_id,
                         telepon, email, nama_bank, nomor_rekening,
-                        foto_profil, foto_ktp, tahun_tes, is_aktif
+                        foto_profil, foto_ktp, tanda_tangan, tahun_tes, is_aktif
                     ) VALUES (
                         :user_id, :nik, :nama, :tempat_lahir, :tanggal_lahir, :jenis_kelamin,
                         :alamat, :desa_kelurahan, :kecamatan, :kabupaten_kota_id,
                         :telepon, :email, :nama_bank, :nomor_rekening,
-                        :foto_profil, :foto_ktp, :tahun_tes, 1
+                        :foto_profil, :foto_ktp, :tanda_tangan, :tahun_tes, 1
                     )",
                     [
                         'user_id' => $updateData['user_id'],
@@ -455,6 +463,7 @@ class HafizController extends Controller
                         'nomor_rekening' => $updateData['nomor_rekening'] ?? null,
                         'foto_profil' => $updateData['foto_profil'] ?? null,
                         'foto_ktp' => $updateData['foto_ktp'] ?? null,
+                        'tanda_tangan' => $updateData['tanda_tangan'] ?? null,
                         'tahun_tes' => $updateData['tahun_tes'],
                     ]
                 );
@@ -557,5 +566,37 @@ class HafizController extends Controller
             setFlash('error', 'Gagal mengubah password.');
             $this->redirect(APP_URL . '/hafiz/password');
         }
+    }
+    /**
+     * Helper to save Base64 Image
+     */
+    private function saveBase64Image(string $base64, string $subDir, string $filenamePrefix): ?string
+    {
+        if (preg_match('/^data:image\/(\w+);base64,/', $base64, $type)) {
+            $data = substr($base64, strpos($base64, ',') + 1);
+            $extension = strtolower($type[1]);
+
+            if (!in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                return null;
+            }
+
+            $data = base64_decode($data);
+            if ($data === false) {
+                return null;
+            }
+
+            $targetDir = UPLOAD_PATH . '/' . $subDir . '/';
+            if (!is_dir($targetDir)) {
+                mkdir($targetDir, 0755, true);
+            }
+
+            $fileName = $filenamePrefix . '_' . time() . '.' . $extension;
+            $filePath = $targetDir . $fileName;
+
+            if (file_put_contents($filePath, $data)) {
+                return '/uploads/' . $subDir . '/' . $fileName;
+            }
+        }
+        return null;
     }
 }

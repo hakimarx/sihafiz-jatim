@@ -106,6 +106,7 @@ CREATE TABLE `hafiz` (
     `tanggal_lulus` DATE DEFAULT NULL,
     `status_insentif` ENUM('aktif', 'tidak_aktif', 'suspend') DEFAULT 'tidak_aktif',
     `keterangan` TEXT DEFAULT NULL,
+    `status_data` ENUM('valid', 'perlu_perbaikan') DEFAULT 'valid' COMMENT 'Status kualitas data',
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `is_aktif` TINYINT(1) DEFAULT 1,
