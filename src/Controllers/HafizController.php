@@ -405,36 +405,38 @@ class HafizController extends Controller
         }
 
         try {
-<<<<<<< Updated upstream
             $hafizId = $this->hafiz['id'];
 
-            if ($hafizId && $hafizId > 0) {
-                Hafiz::update($hafizId, $updateData);
-            } else {
-                // Create New Hafiz Record linked to current user
-                $updateData['user_id'] = getCurrentUserId();
+            if ($hafizId == 0) {
+                // Create new hafiz record for this user
+                $user = User::findById(getCurrentUserId());
+                $updateData['user_id'] = $user['id'];
                 $updateData['tahun_tes'] = TAHUN_ANGGARAN;
 
-                // Ensure required fields
-                if (empty($updateData['nik'])) $updateData['nik'] = $_SESSION['username'] ?? rand(100000, 999999); // Fallback
+                // Get kabupaten_kota_id from form or from user session/database
+                $updateData['kabupaten_kota_id'] = $this->input('kabupaten_kota_id') ?: ($user['kabupaten_kota_id'] ?? null);
+
                 if (empty($updateData['kabupaten_kota_id'])) {
-                    // Try get from user
-                    $user = User::findById(getCurrentUserId());
-                    $updateData['kabupaten_kota_id'] = $user['kabupaten_kota_id'];
+                    throw new Exception("Wilayah Kabupaten/Kota harus dipilih.");
                 }
 
-                // Helper to create without recreating user
-                // Direct insert via Database class since Hafiz::create logic is for Admin
-                // But simplified, let's just use raw insert to be safe
+                // Ensure required fields
+                if (empty($updateData['nik'])) {
+                    $updateData['nik'] = $_SESSION['username'] ?? (string) rand(100000, 999999);
+                }
+
+                // Direct insert to avoid Hafiz::create recreating user account
                 Database::execute(
                     "INSERT INTO hafiz (
                         user_id, nik, nama, tempat_lahir, tanggal_lahir, jenis_kelamin,
                         alamat, desa_kelurahan, kecamatan, kabupaten_kota_id,
-                        telepon, email, nama_bank, nomor_rekening, tahun_tes, is_aktif
+                        telepon, email, nama_bank, nomor_rekening,
+                        foto_profil, foto_ktp, tahun_tes, is_aktif
                     ) VALUES (
                         :user_id, :nik, :nama, :tempat_lahir, :tanggal_lahir, :jenis_kelamin,
                         :alamat, :desa_kelurahan, :kecamatan, :kabupaten_kota_id,
-                        :telepon, :email, :nama_bank, :nomor_rekening, :tahun_tes, 1
+                        :telepon, :email, :nama_bank, :nomor_rekening,
+                        :foto_profil, :foto_ktp, :tahun_tes, 1
                     )",
                     [
                         'user_id' => $updateData['user_id'],
@@ -446,22 +448,20 @@ class HafizController extends Controller
                         'alamat' => $updateData['alamat'] ?? null,
                         'desa_kelurahan' => $updateData['desa_kelurahan'] ?? null,
                         'kecamatan' => $updateData['kecamatan'] ?? null,
-                        'kabupaten_kota_id' => $updateData['kabupaten_kota_id'] ?? 1, // Default to avoid crash
+                        'kabupaten_kota_id' => $updateData['kabupaten_kota_id'],
                         'telepon' => $updateData['telepon'] ?? null,
                         'email' => $updateData['email'] ?? null,
-                        'nama_bank' => $updateData['nama_bank'] ?? 'BANK JATIM',
+                        'nama_bank' => $updateData['nama_bank'] ?? null,
                         'nomor_rekening' => $updateData['nomor_rekening'] ?? null,
+                        'foto_profil' => $updateData['foto_profil'] ?? null,
+                        'foto_ktp' => $updateData['foto_ktp'] ?? null,
                         'tahun_tes' => $updateData['tahun_tes'],
                     ]
                 );
 
-                $hafizId = Database::lastInsertId();
-                if ($updateData['foto_profil'] ?? false) {
-                    Database::execute("UPDATE hafiz SET foto_profil = :fp WHERE id = :id", ['fp' => $updateData['foto_profil'], 'id' => $hafizId]);
-                }
-                if ($updateData['foto_ktp'] ?? false) {
-                    Database::execute("UPDATE hafiz SET foto_ktp = :fp WHERE id = :id", ['fp' => $updateData['foto_ktp'], 'id' => $hafizId]);
-                }
+                $hafizId = (int) Database::lastInsertId();
+            } else {
+                Hafiz::update($hafizId, $updateData);
             }
 
             // Handle Additional Teaching Locations
@@ -479,26 +479,7 @@ class HafizController extends Controller
                     }
                 }
             }
-            Hafiz::updateMengajarList((int)$hafizId, $mengajarList);
-
-            // Sync Nama & Foto to session
-=======
-            if ($this->hafiz['id'] == 0) {
-                // Create new hafiz record for this user
-                $user = User::findById(getCurrentUserId());
-                $updateData['user_id'] = $user['id'];
-                // Get kabupaten_kota_id from form or from user session/database
-                $updateData['kabupaten_kota_id'] = $this->input('kabupaten_kota_id') ?: ($user['kabupaten_kota_id'] ?? null);
-                
-                if (empty($updateData['kabupaten_kota_id'])) {
-                    throw new Exception("Wilayah Kabupaten/Kota harus dipilih.");
-                }
-
-                Hafiz::create($updateData);
-            } else {
-                Hafiz::update($this->hafiz['id'], $updateData);
-            }
->>>>>>> Stashed changes
+            Hafiz::updateMengajarList($hafizId, $mengajarList);
 
             // Sync Nama & Foto to session
             if (!empty($updateData['nama'])) {

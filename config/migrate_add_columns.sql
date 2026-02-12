@@ -17,5 +17,5 @@ ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `foto_profil` VARCHAR(255) DEFAULT 
 -- Pastikan admin kabko BKL (Bangkalan) sudah ada
 -- ============================================
 INSERT IGNORE INTO `users` (`username`, `password`, `role`, `kabupaten_kota_id`, `nama`, `is_active`) 
-SELECT 'admin.bkl', '$2y$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4TnE5h1nWkD9.XW2', 'admin_kabko', id, 'Admin Kabupaten Bangkalan', 1 
+SELECT 'admin.bkl', '$2y$12$ulx0yY5aI0.ah92vyi4vmeCuH30ErtlZf/qrYK03p516KxYxLUOPe', 'admin_kabko', id, 'Admin Kabupaten Bangkalan', 1 
 FROM kabupaten_kota WHERE kode = 'BKL';

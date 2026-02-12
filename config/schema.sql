@@ -78,14 +78,14 @@ CREATE TABLE IF NOT EXISTS `hafiz` (
     `user_id` INT(11) DEFAULT NULL COMMENT 'Link ke akun user untuk login',
     `nik` VARCHAR(20) NOT NULL,
     `nama` VARCHAR(255) NOT NULL,
-    `tempat_lahir` VARCHAR(100) NOT NULL,
-    `tanggal_lahir` DATE NOT NULL,
-    `jenis_kelamin` ENUM('L', 'P') NOT NULL,
-    `alamat` TEXT NOT NULL,
+    `tempat_lahir` VARCHAR(100) DEFAULT NULL,
+    `tanggal_lahir` DATE DEFAULT NULL,
+    `jenis_kelamin` ENUM('L', 'P') DEFAULT NULL,
+    `alamat` TEXT DEFAULT NULL,
     `rt` VARCHAR(5) DEFAULT NULL,
     `rw` VARCHAR(5) DEFAULT NULL,
-    `desa_kelurahan` VARCHAR(100) NOT NULL,
-    `kecamatan` VARCHAR(100) NOT NULL,
+    `desa_kelurahan` VARCHAR(100) DEFAULT NULL,
+    `kecamatan` VARCHAR(100) DEFAULT NULL,
     `kabupaten_kota_id` INT(11) NOT NULL,
     `telepon` VARCHAR(20) DEFAULT NULL,
     `email` VARCHAR(255) DEFAULT NULL,
@@ -200,7 +200,7 @@ CREATE TABLE IF NOT EXISTS `settings` (
 
 -- Default Admin Provinsi
 INSERT INTO `users` (`username`, `password`, `role`, `nama`, `is_active`) VALUES
-('admin', '$2y$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4TnE5h1nWkD9.XW2', 'admin_prov', 'Administrator Provinsi', 1);
+('admin', '$2y$12$ulx0yY5aI0.ah92vyi4vmeCuH30ErtlZf/qrYK03p516KxYxLUOPe', 'admin_prov', 'Administrator Provinsi', 1);
 -- Password default: admin123
 
 -- Kabupaten/Kota Jawa Timur
