@@ -44,6 +44,32 @@
                             <small class="text-muted">Ukuran: 32x32px atau 64x64px.</small>
                         </div>
                     </div>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label"><i class="bi bi-house-door me-1"></i>Logo Halaman Utama (Login)</label>
+                            <div class="mb-3">
+                                <?php if (!empty($settings['app_logo_home'])): ?>
+                                    <img src="<?= APP_URL . $settings['app_logo_home'] ?>" alt="Logo Home" class="img-thumbnail mb-2" style="max-height: 100px;">
+                                <?php else: ?>
+                                    <div class="bg-light p-4 text-center border rounded mb-2">
+                                        <i class="bi bi-house-door fs-1 text-muted"></i>
+                                        <p class="small text-muted mb-0">Belum ada logo halaman utama</p>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <input type="file" class="form-control" name="logo_home" accept="image/*">
+                            <small class="text-muted">Logo yang tampil di halaman login & registrasi. Rekomendasi: 300x300px (PNG Transparan).</small>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="alert alert-info border-0 bg-info bg-opacity-10 mt-4">
+                                <small>
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    <strong>Logo Halaman Utama</strong> ditampilkan di halaman login dan registrasi sebagai identitas utama aplikasi yang dilihat publik. 
+                                    Jika tidak diatur, akan menggunakan logo default bawaan sistem.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

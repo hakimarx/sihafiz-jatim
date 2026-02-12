@@ -397,6 +397,26 @@ class AdminController extends Controller
         }
 
         try {
+            // Check authorization for Admin KabKo
+            if (hasRole(ROLE_ADMIN_KABKO)) {
+                $laporan = LaporanHarian::findById((int) $id);
+                if (!$laporan) {
+                    setFlash('error', 'Laporan tidak ditemukan.');
+                    $this->redirect(APP_URL . '/admin/laporan');
+                    return;
+                }
+
+                $admin = User::findById(getCurrentUserId());
+                // Get hafiz data to check their region
+                $hafiz = Hafiz::findById($laporan['hafiz_id']);
+                
+                if ($hafiz['kabupaten_kota_id'] != $admin['kabupaten_kota_id']) {
+                    setFlash('error', 'Anda tidak berwenang memverifikasi laporan dari kabupaten/kota lain.');
+                    $this->redirect(APP_URL . '/admin/laporan');
+                    return;
+                }
+            }
+
             LaporanHarian::verify((int) $id, $status, getCurrentUserId(), $catatan);
             setFlash('success', 'Laporan berhasil diverifikasi.');
         } catch (Exception $e) {
@@ -624,6 +644,14 @@ class AdminController extends Controller
             $faviconPath = $this->handleFileUpload($_FILES['favicon'], 'favicon');
             if ($faviconPath) {
                 Setting::set('app_favicon', $faviconPath);
+            }
+        }
+
+        // Handle Logo Halaman Utama (Login Page)
+        if (isset($_FILES['logo_home']) && $_FILES['logo_home']['error'] === UPLOAD_ERR_OK) {
+            $logoHomePath = $this->handleFileUpload($_FILES['logo_home'], 'logo_home');
+            if ($logoHomePath) {
+                Setting::set('app_logo_home', $logoHomePath);
             }
         }
 

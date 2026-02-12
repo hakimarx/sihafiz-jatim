@@ -52,7 +52,11 @@ class HafizController extends Controller
                 'nama_bank' => '-',
                 'nomor_rekening' => '-',
                 'rt' => '',
-                'rw' => ''
+                'rw' => '',
+                'foto_profil' => null,
+                'foto_ktp' => null,
+                'tmt_mengajar' => null,
+                'tempat_mengajar' => null
             ];
         }
     }
@@ -401,6 +405,7 @@ class HafizController extends Controller
         }
 
         try {
+<<<<<<< Updated upstream
             $hafizId = $this->hafiz['id'];
 
             if ($hafizId && $hafizId > 0) {
@@ -477,6 +482,23 @@ class HafizController extends Controller
             Hafiz::updateMengajarList((int)$hafizId, $mengajarList);
 
             // Sync Nama & Foto to session
+=======
+            if ($this->hafiz['id'] == 0) {
+                // Create new hafiz record for this user
+                $user = User::findById(getCurrentUserId());
+                $updateData['user_id'] = $user['id'];
+                // Get kabupaten_kota_id from form or from user session/database
+                $updateData['kabupaten_kota_id'] = $this->input('kabupaten_kota_id') ?: ($user['kabupaten_kota_id'] ?? null);
+                
+                if (empty($updateData['kabupaten_kota_id'])) {
+                    throw new Exception("Wilayah Kabupaten/Kota harus dipilih.");
+                }
+
+                Hafiz::create($updateData);
+            } else {
+                Hafiz::update($this->hafiz['id'], $updateData);
+            }
+>>>>>>> Stashed changes
 
             // Sync Nama & Foto to session
             if (!empty($updateData['nama'])) {

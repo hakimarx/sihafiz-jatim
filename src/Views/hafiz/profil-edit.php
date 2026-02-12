@@ -121,6 +121,18 @@
                         </div>
                     </div>
 
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Kabupaten/Kota</label>
+                        <select class="form-select" name="kabupaten_kota_id" required>
+                            <option value="">-- Pilih Kabupaten/Kota --</option>
+                            <?php foreach ($kabkoList as $id => $nama): ?>
+                                <option value="<?= $id ?>" <?= ($hafiz['kabupaten_kota_id'] ?? '') == $id ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($nama) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
                     <h6 class="border-bottom pb-2 mb-3 mt-4 fw-bold"><i class="bi bi-telephone me-2"></i>Kontak & Perbankan</h6>
                     <div class="row mb-3">
                         <div class="col-md-6 mb-3">

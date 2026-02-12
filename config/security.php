@@ -151,24 +151,28 @@ function setUserSession(array $user): void
  */
 function setRememberMe(int $userId): void
 {
-    $token = bin2hex(random_bytes(32));
-    $expiry = time() + (30 * 24 * 60 * 60); // 30 days
+    try {
+        $token = bin2hex(random_bytes(32));
+        $expiry = time() + (30 * 24 * 60 * 60); // 30 days
 
-    // Store in database
-    Database::execute(
-        "UPDATE users SET remember_token = :token WHERE id = :id",
-        ['token' => $token, 'id' => $userId]
-    );
+        // Store in database
+        Database::execute(
+            "UPDATE users SET remember_token = :token WHERE id = :id",
+            ['token' => $token, 'id' => $userId]
+        );
 
-    // Set cookie (secure, httponly)
-    setcookie('remember_me', $userId . ':' . $token, [
-        'expires' => $expiry,
-        'path' => '/',
-        'domain' => '',
-        'secure' => (defined('APP_ENV') && APP_ENV === 'production'),
-        'httponly' => true,
-        'samesite' => 'Lax'
-    ]);
+        // Set cookie (secure, httponly)
+        setcookie('remember_me', $userId . ':' . $token, [
+            'expires' => $expiry,
+            'path' => '/',
+            'domain' => '',
+            'secure' => (defined('APP_ENV') && APP_ENV === 'production'),
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]);
+    } catch (Exception $e) {
+        error_log('setRememberMe error: ' . $e->getMessage());
+    }
 }
 
 /**
@@ -180,20 +184,24 @@ function checkRememberMe(): void
         return;
     }
 
-    $parts = explode(':', $_COOKIE['remember_me']);
-    if (count($parts) !== 2) {
-        return;
-    }
+    try {
+        $parts = explode(':', $_COOKIE['remember_me']);
+        if (count($parts) !== 2) {
+            return;
+        }
 
-    [$userId, $token] = $parts;
+        [$userId, $token] = $parts;
 
-    $user = Database::queryOne(
-        "SELECT * FROM users WHERE id = :id AND remember_token = :token AND is_active = 1",
-        ['id' => $userId, 'token' => $token]
-    );
+        $user = Database::queryOne(
+            "SELECT * FROM users WHERE id = :id AND remember_token = :token AND is_active = 1",
+            ['id' => $userId, 'token' => $token]
+        );
 
-    if ($user) {
-        setUserSession($user);
+        if ($user) {
+            setUserSession($user);
+        }
+    } catch (Exception $e) {
+        error_log('checkRememberMe error: ' . $e->getMessage());
     }
 }
 

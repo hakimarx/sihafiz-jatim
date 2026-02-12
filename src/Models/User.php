@@ -64,10 +64,15 @@ class User
      */
     public static function findByGoogleId(string $googleId): ?array
     {
-        return Database::queryOne(
-            "SELECT * FROM users WHERE google_id = :google_id AND is_active = 1",
-            ['google_id' => $googleId]
-        );
+        try {
+            return Database::queryOne(
+                "SELECT * FROM users WHERE google_id = :google_id AND is_active = 1",
+                ['google_id' => $googleId]
+            );
+        } catch (Exception $e) {
+            error_log('findByGoogleId error: ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**
@@ -295,10 +300,15 @@ class User
      */
     public static function updateGoogleId(int $userId, string $googleId): bool
     {
-        return Database::execute(
-            "UPDATE users SET google_id = :google_id WHERE id = :id",
-            ['id' => $userId, 'google_id' => $googleId]
-        ) > 0;
+        try {
+            return Database::execute(
+                "UPDATE users SET google_id = :google_id WHERE id = :id",
+                ['id' => $userId, 'google_id' => $googleId]
+            ) > 0;
+        } catch (Exception $e) {
+            error_log('updateGoogleId error: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**

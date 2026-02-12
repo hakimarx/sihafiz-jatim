@@ -34,12 +34,16 @@ CREATE TABLE IF NOT EXISTS `users` (
     `nama` VARCHAR(255) DEFAULT NULL,
     `email` VARCHAR(255) DEFAULT NULL,
     `telepon` VARCHAR(20) DEFAULT NULL,
+    `google_id` VARCHAR(255) DEFAULT NULL COMMENT 'Google OAuth ID',
+    `remember_token` VARCHAR(255) DEFAULT NULL COMMENT 'Remember Me Token',
+    `foto_profil` VARCHAR(255) DEFAULT NULL,
     `is_active` TINYINT(1) DEFAULT 1,
     `last_login` DATETIME DEFAULT NULL,
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `idx_username` (`username`),
+    UNIQUE KEY `idx_google_id` (`google_id`),
     KEY `idx_role` (`role`),
     KEY `idx_kabko` (`kabupaten_kota_id`),
     KEY `idx_active` (`is_active`),
@@ -249,5 +253,20 @@ INSERT INTO `settings` (`key`, `value`, `description`) VALUES
 ('app_name', 'SiHafiz Jatim', 'Nama Aplikasi'),
 ('app_address', 'Islamic Center Jl Dukuh Kupang, Surabaya', 'Alamat Instansi'),
 ('tahun_aktif', '2026', 'Tahun Anggaran Aktif');
+
+-- ============================================
+-- HAFIZ MENGAJAR (Tempat Mengajar Tambahan)
+-- ============================================
+CREATE TABLE IF NOT EXISTS `hafiz_mengajar` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `hafiz_id` INT(11) NOT NULL,
+    `tempat_mengajar` VARCHAR(255) NOT NULL,
+    `tmt_mengajar` DATE NOT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_hafiz` (`hafiz_id`),
+    CONSTRAINT `fk_mengajar_hafiz` FOREIGN KEY (`hafiz_id`) 
+        REFERENCES `hafiz` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 COMMIT;

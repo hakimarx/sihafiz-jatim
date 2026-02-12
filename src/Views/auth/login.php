@@ -12,8 +12,12 @@
 
                 <!-- Logo & Brand -->
                 <div class="text-center mb-4 login-header">
-                    <img src="<?= APP_URL ?>/assets/img/logo-lptq.png" alt="Logo LPTQ" class="img-fluid mb-3 login-logo" style="max-height: 100px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));">
-                    <h2 class="fw-bold text-white mb-1">SiHafiz Jatim</h2>
+                    <?php
+                    $logoHome = Setting::get('app_logo_home');
+                    $logoUrl = $logoHome ? APP_URL . $logoHome : APP_URL . '/assets/img/logo-lptq.png';
+                    ?>
+                    <img src="<?= $logoUrl ?>" alt="Logo LPTQ" class="img-fluid mb-3 login-logo" style="max-height: 100px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));">
+                    <h2 class="fw-bold text-white mb-1"><?= htmlspecialchars(Setting::get('app_name', APP_NAME)) ?></h2>
                     <p class="text-white-50 opacity-75">Sistem Pelaporan & Data Huffadz Jawa Timur</p>
                 </div>
 
