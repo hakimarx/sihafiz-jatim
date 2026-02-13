@@ -292,7 +292,7 @@ class RegistrationController extends Controller
         }
 
         $hafizId = intval($this->input('hafiz_id'));
-        $nik = sanitizeNik($this->input('nik'));
+        $nik = sanitizeNik($this->input('nik') ?? '');
         $kabkoId = intval($this->input('kabupaten_kota_id'));
         $telepon = sanitizePhone($this->input('telepon'));
         $tanggalLahir = $this->input('tanggal_lahir');

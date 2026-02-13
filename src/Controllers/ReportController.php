@@ -66,6 +66,7 @@ class ReportController extends Controller
                 AND MONTH(lh.tanggal) = :bulan
                 AND YEAR(lh.tanggal) = :tahun
                 AND h.is_aktif = 1
+                AND (h.is_meninggal = 0 OR h.is_meninggal IS NULL)
                 ORDER BY lh.tanggal ASC, h.nama ASC";
 
         $laporan = Database::query($sql, [
@@ -102,7 +103,8 @@ class ReportController extends Controller
                 FROM hafiz h
                 JOIN kabupaten_kota k ON h.kabupaten_kota_id = k.id
                 WHERE h.kabupaten_kota_id = :kabko_id
-                AND h.is_aktif = 1";
+                AND h.is_aktif = 1
+                AND (h.is_meninggal = 0 OR h.is_meninggal IS NULL)";
 
         $params = ['kabko_id' => $kabkoId];
 
@@ -143,6 +145,7 @@ class ReportController extends Controller
                 FROM hafiz h
                 WHERE h.kabupaten_kota_id = :kabko_id
                 AND h.is_aktif = 1
+                AND (h.is_meninggal = 0 OR h.is_meninggal IS NULL)
                 AND h.status_kelulusan = 'lulus' 
                 ORDER BY h.nama ASC";
         // Default hanya yang lulus yang ikut kegiatan, atau bisa semua? Asumsi yang lulus/aktif.

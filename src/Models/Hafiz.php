@@ -277,7 +277,7 @@ class Hafiz
 
         $kbWhere = "";
         if ($kabkoId) {
-            $where .= " AND k.id = :kabko_id";
+            // $where .= " AND k.id = :kabko_id";
             $kbWhere = " WHERE k.id = :kabko_id";
             $params['kabko_id'] = $kabkoId;
         }
@@ -377,7 +377,7 @@ class Hafiz
 
         $kbWhere = "";
         if ($kabkoId) {
-            $where .= " AND h.kabupaten_kota_id = :kabko_id";
+            // $where .= " AND h.kabupaten_kota_id = :kabko_id";
             $kbWhere = " WHERE k.id = :kabko_id";
             $params['kabko_id'] = $kabkoId;
         }

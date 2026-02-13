@@ -43,6 +43,7 @@ status_kelulusan|enum('lulus','tidak_lulus','pending')|YES|pending
 nilai_tahfidz|decimal(5,2)|YES|NONE
 nilai_wawasan|decimal(5,2)|YES|NONE
 foto_ktp|varchar(255)|YES|NONE
+tanda_tangan|text|YES|NONE
 foto_profil|varchar(255)|YES|NONE
 nomor_piagam|varchar(50)|YES|NONE
 tanggal_lulus|date|YES|NONE
@@ -51,3 +52,8 @@ keterangan|text|YES|NONE
 created_at|datetime|YES|CURRENT_TIMESTAMP
 updated_at|datetime|YES|CURRENT_TIMESTAMP
 is_aktif|tinyint(1)|YES|1
+is_meninggal|tinyint(1)|YES|0
+tanggal_kematian|date|YES|NONE
+lokasi_seleksi|varchar(255)|YES|NONE
+tahun_lulus|year|YES|NONE
+status_data|enum('valid','invalid','pending','perlu_perbaikan')|YES|valid

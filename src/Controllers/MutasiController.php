@@ -26,20 +26,27 @@ class MutasiController extends Controller
             $user = User::findById($userId);
             $kabkoId = $user['kabupaten_kota_id'];
 
-            $mutasi = Database::query("
-                SELECT m.*, 
-                       h.nama as nama_hafiz, h.nik,
-                       k_asal.nama as asal_kabko,
-                       k_tujuan.nama as tujuan_kabko,
-                       u.nama as pemohon
-                FROM mutasi_hafiz m
-                JOIN hafiz h ON m.hafiz_id = h.id
-                JOIN kabupaten_kota k_asal ON m.asal_kabko_id = k_asal.id
-                JOIN kabupaten_kota k_tujuan ON m.tujuan_kabko_id = k_tujuan.id
-                JOIN users u ON m.created_by = u.id
-                WHERE m.asal_kabko_id = :kid OR m.tujuan_kabko_id = :kid
-                ORDER BY m.created_at DESC
-            ", ['kid' => $kabkoId]);
+            try {
+                $mutasi = Database::query("
+                    SELECT m.*, 
+                           h.nama as nama_hafiz, h.nik,
+                           k_asal.nama as asal_kabko,
+                           k_tujuan.nama as tujuan_kabko,
+                           u.nama as pemohon
+                    FROM mutasi_hafiz m
+                    JOIN hafiz h ON m.hafiz_id = h.id
+                    JOIN kabupaten_kota k_asal ON m.asal_kabko_id = k_asal.id
+                    JOIN kabupaten_kota k_tujuan ON m.tujuan_kabko_id = k_tujuan.id
+                    JOIN users u ON m.created_by = u.id
+                    WHERE m.asal_kabko_id = :kid1 OR m.tujuan_kabko_id = :kid2
+                    ORDER BY m.created_at DESC
+                ", ['kid1' => $kabkoId, 'kid2' => $kabkoId]);
+            } catch (Exception $e) {
+                error_log("MutasiController::index Error: " . $e->getMessage());
+                // Fallback valid array to prevent view error
+                $mutasi = [];
+                setFlash('error', 'Gagal memuat data mutasi: ' . $e->getMessage());
+            }
         }
 
         $this->view('admin/mutasi/index', ['mutasi' => $mutasi]);

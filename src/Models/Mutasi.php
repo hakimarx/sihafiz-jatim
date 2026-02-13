@@ -50,9 +50,9 @@ class Mutasi
             JOIN kabupaten_kota k_asal ON m.asal_kabko_id = k_asal.id
             JOIN kabupaten_kota k_tujuan ON m.tujuan_kabko_id = k_tujuan.id
             JOIN users u ON m.created_by = u.id
-            WHERE m.asal_kabko_id = :kid OR m.tujuan_kabko_id = :kid
+            WHERE m.asal_kabko_id = :kid1 OR m.tujuan_kabko_id = :kid2
             ORDER BY m.created_at DESC
-        ", ['kid' => $kabkoId]);
+        ", ['kid1' => $kabkoId, 'kid2' => $kabkoId]);
     }
 
     public static function create($data)

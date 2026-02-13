@@ -14,42 +14,54 @@
     <div class="row">
         <!-- Kolom Kiri: Foto & KTP -->
         <div class="col-lg-4 mb-4">
-            <div class="card mb-4 text-center shadow-sm">
-                <div class="card-header bg-white fw-bold">Foto Profil</div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <?php if (!empty($hafiz['foto_profil'])): ?>
-                            <img id="preview-profil" src="<?= APP_URL . htmlspecialchars($hafiz['foto_profil']) ?>" class="img-thumbnail rounded-circle mb-2" style="width: 150px; height: 150px; object-fit: cover;">
-                        <?php else: ?>
-                            <img id="preview-profil" src="https://via.placeholder.com/150" class="img-thumbnail rounded-circle mb-2" style="width: 150px; height: 150px; object-fit: cover;">
-                        <?php endif; ?>
-                    </div>
-                    <input type="file" class="form-control form-control-sm" name="foto_profil" accept="image/*" id="input-profil">
-                    <small class="text-muted">Format: JPG/PNG. Auto-compress 400KB.</small>
-                </div>
-            </div>
-
-            <div class="card shadow-sm">
-                <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
-                    <span>Upload KTP <span class="text-danger">* (Wajib)</span></span>
-                    <span id="ocr-status" class="badge bg-secondary" style="display:none;">Menganalisa...</span>
+            <!-- Upload KTP (Prioritas Utama) -->
+            <div class="card mb-4 shadow-sm border-2 border-primary">
+                <div class="card-header bg-primary text-white fw-bold d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-card-heading me-2"></i>Upload KTP <small class="text-warning fw-normal">(Wajib)</small></span>
+                    <span id="ocr-status" class="badge bg-light text-dark" style="display:none;">Menganalisa...</span>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
+                    <div class="mb-3 text-center">
                         <?php if (!empty($hafiz['foto_ktp'])): ?>
-                            <img id="preview-ktp" src="<?= APP_URL . htmlspecialchars($hafiz['foto_ktp']) ?>" class="img-fluid rounded border mb-2">
+                            <img id="preview-ktp" src="<?= APP_URL . htmlspecialchars($hafiz['foto_ktp']) ?>" class="img-fluid rounded border mb-2 shadow-sm">
                         <?php else: ?>
-                            <div id="ktp-placeholder" class="bg-light border rounded py-4 text-muted small text-center">
-                                <i class="bi bi-card-image d-block fs-1"></i>
-                                Belum ada foto KTP
+                            <div id="ktp-placeholder" class="bg-light border rounded py-5 text-muted small text-center">
+                                <i class="bi bi-card-image d-block fs-1 mb-2 text-primary"></i>
+                                <span class="fw-bold">Belum ada foto KTP</span><br>
+                                <span class="text-muted fst-italic">Upload foto KTP yang jelas untuk auto-fill data</span>
                             </div>
                             <img id="preview-ktp" src="" class="img-fluid rounded border mb-2" style="display:none;">
                         <?php endif; ?>
                     </div>
-                    <input type="file" class="form-control form-control-sm" name="foto_ktp" accept="image/*" id="input-ktp">
-                    <div class="form-text small mt-2">
-                        <i class="bi bi-magic me-1"></i> Sistem akan memindai NIK, Nama, TTL, Kelamin, dan Alamat dari KTP.
+                    <div class="d-grid gap-2">
+                        <label for="input-ktp" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-upload me-2"></i>Pilih File KTP
+                        </label>
+                        <input type="file" class="d-none" name="foto_ktp" accept="image/*" id="input-ktp">
                     </div>
+                    <div class="alert alert-info small mt-3 mb-0 py-2">
+                        <i class="bi bi-magic me-1"></i> Sistem akan memindai <strong>NIK, Nama, TTL dan Alamat</strong> otomatis dari KTP Anda.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Foto Profil -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white fw-bold">Foto Profil</div>
+                <div class="card-body text-center">
+                    <div class="mb-3 position-relative d-inline-block">
+                        <?php if (!empty($hafiz['foto_profil'])): ?>
+                            <img id="preview-profil" src="<?= APP_URL . htmlspecialchars($hafiz['foto_profil']) ?>" class="img-thumbnail rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
+                        <?php else: ?>
+                            <img id="preview-profil" src="https://via.placeholder.com/150" class="img-thumbnail rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
+                        <?php endif; ?>
+                        
+                        <label for="input-profil" class="position-absolute bottom-0 end-0 bg-white rounded-circle shadow p-2" style="cursor: pointer;">
+                            <i class="bi bi-camera-fill text-primary"></i>
+                        </label>
+                    </div>
+                    <input type="file" class="d-none" name="foto_profil" accept="image/*" id="input-profil">
+                    <div class="text-muted small">Klik ikon kamera untuk mengganti foto.</div>
                 </div>
             </div>
         </div>

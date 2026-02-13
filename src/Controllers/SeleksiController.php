@@ -141,8 +141,8 @@ class SeleksiController extends Controller
             setFlash('success', 'Nilai berhasil disimpan untuk ' . $hafiz['nama']);
             $this->redirect(APP_URL . '/seleksi?tahun=' . $tahun);
         } catch (Exception $e) {
-            error_log("Error saving nilai: " . $e->getMessage());
-            setFlash('error', 'Gagal menyimpan nilai.');
+            error_log("Error saving nilai [HafizID: $hafizId]: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+            setFlash('error', 'Gagal menyimpan nilai: ' . $e->getMessage()); // Show actual error for now to debug
             $this->redirect(APP_URL . '/seleksi/' . $hafizId . '/nilai?tahun=' . $tahun);
         }
     }

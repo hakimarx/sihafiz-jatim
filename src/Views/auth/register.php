@@ -119,7 +119,7 @@
                             <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400">
                                 <i class="bi bi-person"></i>
                             </span>
-                            <input type="text" name="nama_cari" class="block w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all font-medium" placeholder="Nama sesuai sertifikat..." required>
+                            <input type="text" name="nama_cari" class="block w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all font-medium" placeholder="Nama..." required>
                         </div>
                     </div>
 
@@ -147,10 +147,9 @@
                         <label class="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">Kode Keamanan</label>
                         <div class="flex gap-3">
                             <div class="w-1/3 bg-gray-200 rounded-xl flex items-center justify-center font-mono text-xl tracking-widest text-gray-600 select-none border border-gray-300">
-                                <?= $captcha['code'] ?>
-                                <input type="hidden" name="captcha_hash" value="<?= $captcha['hash'] ?>">
+                                <?= $captcha['question'] ?> =
                             </div>
-                            <input type="text" name="captcha" class="block w-2/3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all font-medium text-center tracking-widest" placeholder="Ketik kode..." required>
+                            <input type="text" name="captcha" class="block w-2/3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all font-medium text-center tracking-widest" placeholder="Hasil?" required>
                         </div>
                     </div>
 
@@ -220,13 +219,9 @@
                         <label class="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">Kode Keamanan</label>
                         <div class="flex gap-3">
                             <div class="w-1/3 bg-gray-200 rounded-xl flex items-center justify-center font-mono text-xl tracking-widest text-gray-600 select-none border border-gray-300">
-                                <?= $captcha['code'] ?>
-                                <!-- Hash is already in the other form, but we need unique name or shared helper? 
-                                     Actually, RegistrationController generates ONE captcha per request. 
-                                     So the hash is same for all forms. We can reuse the value or output hidden input again. -->
-                                <input type="hidden" name="captcha_hash" value="<?= $captcha['hash'] ?>">
+                                <?= $captcha['question'] ?> =
                             </div>
-                            <input type="text" name="captcha" class="block w-2/3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all font-medium text-center tracking-widest" placeholder="Ketik kode..." required>
+                            <input type="text" name="captcha" class="block w-2/3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all font-medium text-center tracking-widest" placeholder="Hasil?" required>
                         </div>
                     </div>
 

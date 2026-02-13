@@ -751,7 +751,9 @@ class AdminController extends Controller
                 'sertifikat' => trim($data[17] ?? ''),
                 'mengajar' => trim($data[18] ?? ''),
                 'telepon' => preg_replace('/[^0-9]/', '', $data[20] ?? ''),
-                'lulus' => trim($data[22] ?? '')
+                'telepon' => preg_replace('/[^0-9]/', '', $data[20] ?? ''),
+                'lulus' => trim($data[22] ?? ''),
+                'lokasi_seleksi' => trim($data[3] ?? '')
             ];
 
             if (empty($csvData['nik']) || strlen($csvData['nik']) < 10) {
@@ -803,8 +805,12 @@ class AdminController extends Controller
                     'telepon' => $csvData['telepon'],
                     'email' => null,
                     'sertifikat_tahfidz' => $csvData['sertifikat'],
-                    'mengajar' => $csvData['mengajar'] ? 1 : 0,
+                    'mengajar' => !empty($csvData['mengajar']) ? 1 : 0,
+                    'tempat_mengajar' => $csvData['mengajar'],
                     'tmt_mengajar' => null,
+                    'tahun_lulus' => (int)($csvData['lulus'] ?: date('Y')), // Default current year if missing? Or null? Let's use value.
+                    'lokasi_seleksi' => $csvData['lokasi_seleksi'],
+                    'is_meninggal' => 0,
                     'tahun_tes' => (int)$csvData['tahun']
                 ]);
 

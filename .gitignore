@@ -15,8 +15,26 @@ Thumbs.db
 *.xlsm
 *.xlsx
 *.zip
+*.sql
 deploy.log
 
 # Generated files (large)
-config/import_data_huffaz.sql
 config/nik_issues_log.txt
+
+# Temporary scripts
+check_*.php
+debug_*.php
+fix_*.php
+test_*.php
+inspect_*.php
+verify_*.php
+get_stats.php
+run_*.php
+create_demo_data.php
+migrate_*.php
+
+# Output files
+*_output.txt
+data_output.txt
+linkage_check.txt
+kabko_check.txt

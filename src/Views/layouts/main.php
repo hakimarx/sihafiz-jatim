@@ -13,111 +13,151 @@
         <link rel="icon" type="image/x-icon" href="<?= APP_URL . $favicon ?>">
     <?php endif; ?>
 
-    <!-- Bootstrap 5 CSS (CDN) -->
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        emerald: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b',
+                        },
+                        gold: {
+                            400: '#fbbf24',
+                            500: '#d4af37',
+                            600: '#b4942b',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        arabic: ['Amiri', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS (CDN) - Keep for Grid/Components -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
         :root {
-            --primary-color: #198754;
-            --secondary-color: #0d6efd;
+            --primary-color: #059669; /* Emerald 600 */
+            --secondary-color: #d4af37; /* Gold */
         }
 
         body {
-            background-color: #f8f9fa;
-            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdf4; /* Emerald 50 */
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23065f46' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
         }
 
+        /* Modern Sidebar */
         .sidebar {
             min-height: 100vh;
-            background: linear-gradient(180deg, #198754 0%, #157347 100%);
+            background: linear-gradient(180deg, #064e3b 0%, #065f46 100%);
+            box-shadow: 4px 0 24px rgba(0,0,0,0.1);
         }
 
         .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 0.75rem 1rem;
-            border-radius: 0.375rem;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 0.8rem 1rem;
+            border-radius: 0.75rem;
             margin-bottom: 0.25rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
         }
 
-        .sidebar .nav-link:hover,
+        .sidebar .nav-link:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(4px);
+        }
+
         .sidebar .nav-link.active {
             color: #fff;
-            background-color: rgba(255, 255, 255, 0.15);
+            background: linear-gradient(90deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.05) 100%);
+            border-left: 4px solid #d4af37; /* Gold Border */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         .sidebar .nav-link i {
-            width: 1.5rem;
+            width: 1.75rem;
+            font-size: 1.1rem;
         }
 
-        .main-content {
-            padding: 1.5rem;
-        }
-
+        /* Card Modernization */
         .card {
             border: none;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .card-header {
+            background-color: transparent;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-family: 'Amiri', serif; /* Religious Touch for Headers */
+            font-weight: 700;
+            font-size: 1.1rem;
+            padding: 1rem 1.25rem;
+            color: #064e3b;
         }
 
-        .stat-card {
-            border-left: 4px solid var(--primary-color);
+        /* Responsive Table Design */
+        .table {
+            --bs-table-bg: transparent;
         }
-
-        .stat-card.pending {
-            border-left-color: #ffc107;
-        }
-
-        .stat-card.success {
-            border-left-color: #198754;
-        }
-
-        .stat-card.danger {
-            border-left-color: #dc3545;
-        }
-
-        .navbar-brand {
-            font-weight: 600;
-        }
-
-        .page-header {
-            margin-bottom: 1.5rem;
-        }
-
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-
-        .btn-primary:hover {
-            background-color: #157347;
-            border-color: #146c43;
-        }
-
         .table th {
-            background-color: #f8f9fa;
             font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            background-color: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .table td {
+            vertical-align: middle;
+            font-size: 0.9rem;
+        }
+        
+        /* Glassmorphism Utilities */
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
 
-        .badge-pending {
-            background-color: #ffc107;
-            color: #000;
+        /* Button Enhancements */
+        .btn {
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: all 0.2s;
         }
-
-        .badge-disetujui {
-            background-color: #198754;
+        .btn-primary {
+            background-color: #059669; /* Emerald 600 */
+            border-color: #059669;
         }
-
-        .badge-ditolak {
-            background-color: #dc3545;
-        }
-
-        .badge-lulus {
-            background-color: #198754;
-        }
-
-        .badge-tidak_lulus {
-            background-color: #dc3545;
+        .btn-primary:hover {
+            background-color: #047857; /* Emerald 700 */
+            border-color: #047857;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(5, 150, 105, 0.2);
         }
 
         @media (max-width: 768px) {

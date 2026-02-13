@@ -116,14 +116,45 @@
     <?php if ($pagination['total_pages'] > 1): ?>
         <div class="card-footer bg-white">
             <nav>
-                <ul class="pagination justify-content-center mb-0">
-                    <?php for ($p = 1; $p <= $pagination['total_pages']; $p++): ?>
-                        <li class="page-item <?= $p == $pagination['page'] ? 'active' : '' ?>">
+                <ul class="pagination pagination-sm justify-content-center mb-0">
+                    <?php
+                    $totalPages = $pagination['total_pages'];
+                    $currentPage = $pagination['page'];
+                    $range = 1; // Reduced range to prevent overflow
+
+                    // First & Prev
+                    if ($currentPage > 1): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1&<?= http_build_query(array_filter($filters)) ?>">&laquo;</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=<?= $currentPage - 1 ?>&<?= http_build_query(array_filter($filters)) ?>">&lsaquo;</a>
+                        </li>
+                    <?php endif; ?>
+
+                    <?php
+                    for ($p = 1; $p <= $totalPages; $p++):
+                        if ($p == 1 || $p == $totalPages || ($p >= $currentPage - $range && $p <= $currentPage + $range)):
+                    ?>
+                        <li class="page-item <?= $p == $currentPage ? 'active' : '' ?>">
                             <a class="page-link" href="?page=<?= $p ?>&<?= http_build_query(array_filter($filters)) ?>">
                                 <?= $p ?>
                             </a>
                         </li>
-                    <?php endfor; ?>
+                    <?php elseif (($p == $currentPage - $range - 1) || ($p == $currentPage + $range + 1)): ?>
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    <?php endif; endfor; ?>
+
+                    <?php
+                    // Next & Last
+                    if ($currentPage < $totalPages): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=<?= $currentPage + 1 ?>&<?= http_build_query(array_filter($filters)) ?>">&rsaquo;</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=<?= $totalPages ?>&<?= http_build_query(array_filter($filters)) ?>">&raquo;</a>
+                        </li>
+                    <?php endif; ?>
                 </ul>
             </nav>
         </div>

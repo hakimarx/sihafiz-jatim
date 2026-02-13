@@ -1,9 +1,6 @@
 -- ============================================
 -- Migration: Add missing columns to users and hafiz table
 -- ============================================
--- Jalankan script ini di database production yang sudah ada
--- untuk menambahkan kolom-kolom baru yang dibutuhkan
--- ============================================
 
 -- Tambahkan kolom status_data ke hafiz jika belum ada
 -- MySQL compatible: gunakan SET untuk cek kolom
@@ -14,12 +11,25 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- Tambahkan kolom google_id jika belum ada
-ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `google_id` VARCHAR(255) DEFAULT NULL COMMENT 'Google OAuth ID' AFTER `telepon`;
-ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `remember_token` VARCHAR(255) DEFAULT NULL COMMENT 'Remember Me Token' AFTER `google_id`;
-ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `foto_profil` VARCHAR(255) DEFAULT NULL AFTER `remember_token`;
+SET @col_g_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'google_id');
+SET @sql_g = IF(@col_g_exists = 0, 'ALTER TABLE `users` ADD COLUMN `google_id` VARCHAR(255) DEFAULT NULL COMMENT ''Google OAuth ID'' AFTER `telepon`', 'SELECT 1');
+PREPARE stmt_g FROM @sql_g;
+EXECUTE stmt_g;
+DEALLOCATE PREPARE stmt_g;
 
--- Index untuk google_id (ignore jika sudah ada)
--- ALTER TABLE `users` ADD UNIQUE KEY `idx_google_id` (`google_id`);
+-- Tambahkan kolom remember_token jika belum ada
+SET @col_r_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'remember_token');
+SET @sql_r = IF(@col_r_exists = 0, 'ALTER TABLE `users` ADD COLUMN `remember_token` VARCHAR(255) DEFAULT NULL COMMENT ''Remember Me Token'' AFTER `google_id`', 'SELECT 1');
+PREPARE stmt_r FROM @sql_r;
+EXECUTE stmt_r;
+DEALLOCATE PREPARE stmt_r;
+
+-- Tambahkan kolom foto_profil jika belum ada
+SET @col_f_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'foto_profil');
+SET @sql_f = IF(@col_f_exists = 0, 'ALTER TABLE `users` ADD COLUMN `foto_profil` VARCHAR(255) DEFAULT NULL AFTER `remember_token`', 'SELECT 1');
+PREPARE stmt_f FROM @sql_f;
+EXECUTE stmt_f;
+DEALLOCATE PREPARE stmt_f;
 
 -- ============================================
 -- Pastikan admin kabko BKL (Bangkalan) sudah ada

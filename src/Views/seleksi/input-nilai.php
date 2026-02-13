@@ -61,7 +61,7 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Tanggal Tes</label>
                             <input type="datetime-local" class="form-control" name="tanggal_tes"
-                                value="<?= $seleksi['tanggal_tes'] ? date('Y-m-d\TH:i', strtotime($seleksi['tanggal_tes'])) : date('Y-m-d\TH:i') ?>">
+                                value="<?= ($seleksi['tanggal_tes'] ?? null) ? date('Y-m-d\TH:i', strtotime($seleksi['tanggal_tes'])) : date('Y-m-d\TH:i') ?>">
                         </div>
                     </div>
 
